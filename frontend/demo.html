@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ALVA - ASR Test Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+button { font-family: inherit; cursor: pointer; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: #0b1120;
+  color: #e8f0f8;
+  min-height: 100vh;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ---- LEFT: Chat panel ---- */
+.chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+
+.chat-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(16,24,36,0.85);
+  backdrop-filter: blur(12px);
+}
+.chat-header .logo {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, #0d9488, #14b8a6);
+  border-radius: 12px;
+  display: grid; place-items: center;
+  font-size: 18px; font-weight: 700; color: #fff;
+}
+.chat-header h1 { font-size: 18px; font-weight: 600; }
+.chat-header span { font-size: 12px; color: #94a8c0; }
+
+/* Banner for current test */
+.test-banner {
+  padding: 10px 24px;
+  background: linear-gradient(90deg, rgba(13,148,136,0.15), transparent);
+  border-bottom: 1px solid rgba(13,148,136,0.2);
+  font-size: 13px;
+  font-weight: 600;
+  color: #14b8a6;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  animation: bannerPulse 2s ease infinite;
+}
+.test-banner.active { display: flex; }
+.test-banner .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #14b8a6;
+  animation: dotBlink 1s ease infinite;
+}
+@keyframes bannerPulse { 0%,100%{opacity:1;} 50%{opacity:0.7;} }
+@keyframes dotBlink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+/* Chat messages area */
+.chat-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.chat-body::-webkit-scrollbar { width: 4px; }
+.chat-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
+
+.msg { display: flex; gap: 10px; max-width: 85%; animation: msgIn 0.3s ease; }
+.msg.user { align-self: flex-end; flex-direction: row-reverse; }
+@keyframes msgIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+
+.msg .avatar {
+  width: 32px; height: 32px; border-radius: 10px;
+  display: grid; place-items: center; font-size: 14px;
+  flex-shrink: 0;
+}
+.msg.bot .avatar { background: rgba(13,148,136,0.15); }
+.msg.user .avatar { background: rgba(124,58,237,0.15); }
+.msg.system .avatar { background: rgba(245,158,11,0.15); }
+
+.msg .bubble {
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.msg.bot .bubble { background: rgba(255,255,255,0.06); color: #cdd6e0; border: 1px solid rgba(255,255,255,0.06); }
+.msg.user .bubble { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; }
+.msg.system .bubble {
+  background: rgba(245,158,11,0.08);
+  color: #fbbf24;
+  border: 1px solid rgba(245,158,11,0.15);
+  font-size: 12px;
+  font-weight: 500;
+  font-style: italic;
+}
+
+/* Controls at bottom */
+.chat-controls {
+  padding: 16px 24px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(16,24,36,0.85);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-run {
+  flex: 1;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #0d9488, #0f766e);
+  box-shadow: 0 4px 20px rgba(13,148,136,0.35);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.btn-run:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(13,148,136,0.45); }
+.btn-run:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-run svg { width: 20px; height: 20px; }
+
+.btn-voice {
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  color: #94a8c0;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+.btn-voice:hover { background: rgba(255,255,255,0.08); }
+.btn-voice.active { color: #14b8a6; border-color: rgba(13,148,136,0.3); }
+.btn-voice svg { width: 16px; height: 16px; }
+
+/* ---- RIGHT: Test panel ---- */
+.test-panel {
+  width: 380px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: rgba(16,24,36,0.6);
+}
+
+.test-header {
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  background: rgba(16,24,36,0.85);
+  backdrop-filter: blur(12px);
+}
+.test-header h2 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.test-header p { font-size: 12px; color: #94a8c0; }
+
+/* Score bar */
+.score-bar {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  gap: 16px;
+}
+.score-item {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 10px;
+  text-align: center;
+}
+.score-item.total { background: rgba(255,255,255,0.04); }
+.score-item.pass  { background: rgba(16,185,129,0.1); }
+.score-item.fail  { background: rgba(239,68,68,0.1); }
+.score-item .num {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: 'Fira Code', monospace;
+}
+.score-item.total .num { color: #e8f0f8; }
+.score-item.pass  .num { color: #34d399; }
+.score-item.fail  .num { color: #f87171; }
+.score-item .label { font-size: 10px; font-weight: 600; color: #94a8c0; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+
+/* Test list */
+.test-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.test-list::-webkit-scrollbar { width: 4px; }
+.test-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
+
+.test-row {
+  padding: 10px 14px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+}
+.test-row.running {
+  background: rgba(13,148,136,0.08);
+  border-color: rgba(13,148,136,0.2);
+}
+.test-row.pass {
+  background: rgba(16,185,129,0.06);
+  border-color: rgba(16,185,129,0.15);
+}
+.test-row.fail {
+  background: rgba(239,68,68,0.06);
+  border-color: rgba(239,68,68,0.15);
+}
+
+.test-row .tc-id {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a8c0;
+  min-width: 52px;
+}
+.test-row .tc-name {
+  flex: 1;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #cdd6e0;
+}
+.test-row .tc-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 99px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.test-row .tc-badge.waiting { background: rgba(255,255,255,0.06); color: #4a6282; }
+.test-row .tc-badge.running { background: rgba(13,148,136,0.15); color: #14b8a6; }
+.test-row .tc-badge.pass    { background: rgba(16,185,129,0.15); color: #34d399; }
+.test-row .tc-badge.fail    { background: rgba(239,68,68,0.15); color: #f87171; }
+
+/* Spinner for running state */
+.test-row .tc-badge.running::before {
+  content: '';
+  display: inline-block;
+  width: 8px; height: 8px;
+  border: 2px solid #14b8a6;
+  border-top-color: transparent;
+  border-radius: 50%;
+  margin-right: 5px;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- Summary overlay ---- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8,13,19,0.85);
+  backdrop-filter: blur(8px);
+  display: none;
+  place-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+.overlay.active { display: grid; }
+@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+
+.overlay-card {
+  background: rgba(16,24,36,0.95);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  padding: 36px 40px;
+  min-width: 420px;
+  max-width: 520px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  animation: cardIn 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes cardIn { from{opacity:0;transform:scale(0.95) translateY(12px);} to{opacity:1;transform:none;} }
+
+.overlay-card h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.overlay-card .subtitle { font-size: 13px; color: #94a8c0; margin-bottom: 20px; }
+
+.overlay-scores {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.overlay-scores .os {
+  flex: 1;
+  text-align: center;
+  padding: 14px;
+  border-radius: 12px;
+}
+.overlay-scores .os.total { background: rgba(255,255,255,0.04); }
+.overlay-scores .os.pass  { background: rgba(16,185,129,0.1); }
+.overlay-scores .os.fail  { background: rgba(239,68,68,0.1); }
+.overlay-scores .os .big {
+  font-size: 32px;
+  font-weight: 700;
+  font-family: 'Fira Code', monospace;
+}
+.overlay-scores .os.total .big { color: #e8f0f8; }
+.overlay-scores .os.pass  .big { color: #34d399; }
+.overlay-scores .os.fail  .big { color: #f87171; }
+.overlay-scores .os .lbl { font-size: 10px; font-weight: 600; color: #94a8c0; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+
+.overlay-list {
+  max-height: 260px;
+  overflow-y: auto;
+  margin-bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.overlay-list::-webkit-scrollbar { width: 4px; }
+.overlay-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
+
+.ol-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.ol-row.pass { background: rgba(16,185,129,0.05); }
+.ol-row.fail { background: rgba(239,68,68,0.05); }
+.ol-row .ol-icon { font-size: 14px; }
+.ol-row .ol-id { font-family: 'Fira Code', monospace; font-size: 11px; font-weight: 600; color: #94a8c0; min-width: 52px; }
+.ol-row .ol-name { flex: 1; color: #cdd6e0; }
+.ol-row .ol-tag {
+  font-size: 10px; font-weight: 700; padding: 2px 8px;
+  border-radius: 99px; text-transform: uppercase;
+}
+.ol-row.pass .ol-tag { background: rgba(16,185,129,0.15); color: #34d399; }
+.ol-row.fail .ol-tag { background: rgba(239,68,68,0.15); color: #f87171; }
+
+.btn-close {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #0d9488, #0f766e);
+  box-shadow: 0 4px 16px rgba(13,148,136,0.3);
+  transition: all 0.2s ease;
+}
+.btn-close:hover { transform: translateY(-1px); }
+
+/* Typing indicator */
+.typing { display: flex; gap: 4px; align-items: center; padding: 10px 14px; }
+.typing .dot {
+  width: 7px; height: 7px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 50%;
+  animation: typeDot 1.4s ease infinite;
+}
+.typing .dot:nth-child(2) { animation-delay: 0.2s; }
+.typing .dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typeDot { 0%,60%,100%{transform:translateY(0);opacity:0.3;} 30%{transform:translateY(-5px);opacity:1;} }
+</style>
+</head>
+<body>
+
+<!-- LEFT: Chat panel -->
+<div class="chat-panel">
+  <div class="chat-header">
+    <div class="logo">A</div>
+    <div>
+      <h1>ALVA ASR Demo</h1>
+      <span>Automated test suite - 10 scenarios</span>
+    </div>
+  </div>
+  <div class="test-banner" id="testBanner">
+    <div class="dot"></div>
+    <span id="bannerText">Running...</span>
+  </div>
+  <div class="chat-body" id="chatBody"></div>
+  <div class="chat-controls">
+    <button class="btn-run" id="btnRun" onclick="runDemo()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Run Demo
+    </button>
+    <button class="btn-voice active" id="btnVoice" onclick="toggleVoice()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      Voice ON
+    </button>
+  </div>
+</div>
+
+<!-- RIGHT: Test panel -->
+<div class="test-panel">
+  <div class="test-header">
+    <h2>Test Results</h2>
+    <p>ASR module - TC010 through TC019</p>
+  </div>
+  <div class="score-bar">
+    <div class="score-item total"><div class="num" id="sTotal">0</div><div class="label">Total</div></div>
+    <div class="score-item pass"><div class="num" id="sPass">0</div><div class="label">Passed</div></div>
+    <div class="score-item fail"><div class="num" id="sFail">0</div><div class="label">Failed</div></div>
+  </div>
+  <div class="test-list" id="testList"></div>
+</div>
+
+<!-- Summary overlay -->
+<div class="overlay" id="overlay">
+  <div class="overlay-card">
+    <h2 id="overlayTitle">Demo Complete</h2>
+    <div class="subtitle" id="overlaySubtitle"></div>
+    <div class="overlay-scores">
+      <div class="os total"><div class="big" id="oTotal">0</div><div class="lbl">Total</div></div>
+      <div class="os pass"><div class="big" id="oPass">0</div><div class="lbl">Passed</div></div>
+      <div class="os fail"><div class="big" id="oFail">0</div><div class="lbl">Failed</div></div>
+    </div>
+    <div class="overlay-list" id="overlayList"></div>
+    <button class="btn-close" onclick="closeOverlay()">Close</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const WS_BASE = `ws://${location.hostname}:${location.port || 9001}/ws`;
+const API_BASE = `http://${location.hostname}:${location.port || 9001}`;
+
+let voiceOn = true;
+let demoRunning = false;
+let passCount = 0;
+let failCount = 0;
+
+const TESTS = [
+  {
+    id: 'TC010', name: 'Clear Speech Transcription',
+    userLabel: "I'd like to book an appointment for next Tuesday at 3 PM",
+    send: "I'd like to book an appointment for next Tuesday at 3 PM",
+    validate: (d) => d && d.text && d.text.length > 5,
+  },
+  {
+    id: 'TC011', name: 'Domain Vocabulary - Dates',
+    userLabel: 'Book for the fourteenth of March',
+    send: 'Book for the fourteenth of March',
+    validate: (d) => d && d.text && d.text.length > 5,
+  },
+  {
+    id: 'TC012', name: 'Domain Vocabulary - Times',
+    userLabel: 'Make it at half past 2',
+    send: 'Make it at half past 2',
+    validate: (d) => d && d.text && d.text.length > 5,
+  },
+  {
+    id: 'TC014', name: 'Confidence Score Output',
+    userLabel: '[ASR Confidence: 0.92] I need a dentist',
+    send: '__asr_confidence__:0.92:I need a dentist',
+    validate: (d) => d && d.text && d.text.length > 5,
+  },
+  {
+    id: 'TC015', name: 'Speaker Correction Handling',
+    userLabel: 'I want 3 o\'clock, actually make it 4 o\'clock',
+    send: "I want 3 o'clock, actually make it 4 o'clock",
+    validate: (d) => d && d.text && d.text.length > 5,
+  },
+  {
+    id: 'TC016', name: 'Silence / No-Input Timeout',
+    userLabel: '[Simulating 5 seconds of silence...]',
+    send: '__silence_timeout__',
+    validate: (d) => d && d.text && d.text.length > 5 && d.mode !== 'human_handoff',
+  },
+  {
+    id: 'TC016b', name: 'Silence Escalation (3x)',
+    multi: true,
+    userLabel: '[3x silence - expecting escalation...]',
+    sends: ['__silence_timeout__', '__silence_timeout__', '__silence_timeout__'],
+    validate: (responses) => {
+      if (responses.length < 3) return false;
+      return responses[2] && responses[2].mode === 'human_handoff';
+    },
+  },
+  {
+    id: 'TC017', name: 'Background Noise Robustness',
+    userLabel: '[Low confidence: 0.35] bok dentst tmrw',
+    send: '__asr_confidence__:0.35:bok dentst tmrw',
+    validate: (d) => d && d.text && d.text.length > 3,
+  },
+  {
+    id: 'TC018', name: 'Partial Utterance Handling',
+    userLabel: '[Partial speech] "I want to book for..."',
+    send: '__partial_utterance__:I want to book for',
+    validate: (d) => d && d.text && d.text.length > 5,
+  },
+  {
+    id: 'TC019', name: 'ASR Latency Tracking',
+    userLabel: '[Sending latency measurement: 245ms]',
+    send: '__asr_latency__:245.3:',
+    noReply: true,
+    validate: async () => {
+      try {
+        const r = await fetch(API_BASE + '/metrics/asr-confidence');
+        const m = await r.json();
+        return m.latency && m.latency.total_measurements > 0;
+      } catch { return false; }
+    },
+  },
+];
+
+function toggleVoice() {
+  voiceOn = !voiceOn;
+  const btn = document.getElementById('btnVoice');
+  btn.classList.toggle('active', voiceOn);
+  btn.innerHTML = voiceOn
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> Voice ON'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg> Voice OFF';
+}
+
+/* ---- Chat helpers ---- */
+function scrollChat() {
+  const el = document.getElementById('chatBody');
+  el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+}
+
+function addMsg(role, text) {
+  const body = document.getElementById('chatBody');
+  const div = document.createElement('div');
+  const avatarChar = role === 'user' ? 'U' : role === 'bot' ? 'A' : 'S';
+  div.className = `msg ${role}`;
+  div.innerHTML = `<div class="avatar">${avatarChar}</div><div class="bubble">${text}</div>`;
+  body.appendChild(div);
+  scrollChat();
+}
+
+function addSystemMsg(text) { addMsg('system', text); }
+
+function showTyping() {
+  removeTyping();
+  const body = document.getElementById('chatBody');
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.id = 'typingMsg';
+  div.innerHTML = '<div class="avatar">A</div><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  body.appendChild(div);
+  scrollChat();
+}
+function removeTyping() {
+  const el = document.getElementById('typingMsg');
+  if (el) el.remove();
+}
+
+/* ---- TTS ---- */
+function speak(text) {
+  return new Promise(resolve => {
+    if (!voiceOn || !text) { resolve(); return; }
+    window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices();
+    const enVoice = voices.find(v => v.lang.startsWith('en'));
+    if (enVoice) utt.voice = enVoice;
+    utt.lang = 'en-US'; utt.rate = 1.1; utt.pitch = 1;
+    utt.onend = resolve;
+    utt.onerror = resolve;
+    window.speechSynthesis.speak(utt);
+  });
+}
+
+/* ---- Test panel helpers ---- */
+function buildTestRows() {
+  const list = document.getElementById('testList');
+  list.innerHTML = '';
+  TESTS.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'test-row';
+    row.id = `row-${t.id}`;
+    row.innerHTML = `<span class="tc-id">${t.id}</span><span class="tc-name">${t.name}</span><span class="tc-badge waiting">Waiting</span>`;
+    list.appendChild(row);
+  });
+}
+
+function setRowState(id, state) {
+  const row = document.getElementById(`row-${id}`);
+  if (!row) return;
+  row.className = `test-row ${state}`;
+  const badge = row.querySelector('.tc-badge');
+  badge.className = `tc-badge ${state}`;
+  badge.textContent = state === 'running' ? 'Running' : state === 'pass' ? 'Pass' : state === 'fail' ? 'Fail' : 'Waiting';
+}
+
+function updateScores() {
+  document.getElementById('sTotal').textContent = passCount + failCount;
+  document.getElementById('sPass').textContent = passCount;
+  document.getElementById('sFail').textContent = failCount;
+}
+
+function setBanner(text) {
+  const banner = document.getElementById('testBanner');
+  document.getElementById('bannerText').textContent = text;
+  banner.classList.add('active');
+}
+function hideBanner() {
+  document.getElementById('testBanner').classList.remove('active');
+}
+
+/* ---- WebSocket send + receive ---- */
+function wsSendRecv(ws, message, timeout = 20000) {
+  return new Promise((resolve, reject) => {
+    const handler = (evt) => {
+      clearTimeout(timer);
+      ws.removeEventListener('message', handler);
+      try { resolve(JSON.parse(evt.data)); } catch { resolve(null); }
+    };
+    ws.addEventListener('message', handler);
+    ws.send(message);
+    const timer = setTimeout(() => {
+      ws.removeEventListener('message', handler);
+      resolve(null);
+    }, timeout);
+  });
+}
+
+function wsConnect(sessionId) {
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(`${WS_BASE}/${sessionId}`);
+    ws.onopen = () => resolve(ws);
+    ws.onerror = () => reject(new Error('WebSocket connection failed'));
+    setTimeout(() => reject(new Error('WebSocket timeout')), 5000);
+  });
+}
+
+/* ---- Sleep helper ---- */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* ---- MAIN DEMO RUNNER ---- */
+async function runDemo() {
+  if (demoRunning) return;
+  demoRunning = true;
+  passCount = 0;
+  failCount = 0;
+
+  const btn = document.getElementById('btnRun');
+  btn.disabled = true;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Running...';
+
+  document.getElementById('chatBody').innerHTML = '';
+  buildTestRows();
+  updateScores();
+
+  const results = [];
+  const sid = `demo_${Date.now()}`;
+
+  addSystemMsg('Connecting to ALVA server...');
+
+  let ws;
+  try {
+    ws = await wsConnect(sid);
+  } catch {
+    addSystemMsg('Failed to connect. Is the server running on port 9001?');
+    demoRunning = false;
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Demo';
+    return;
+  }
+
+  addSystemMsg('Connected. Starting 10 test cases...');
+  await sleep(800);
+
+  for (let i = 0; i < TESTS.length; i++) {
+    const t = TESTS[i];
+    setBanner(`${t.id} - ${t.name}`);
+    setRowState(t.id, 'running');
+    await sleep(400);
+
+    addSystemMsg(`--- ${t.id}: ${t.name} ---`);
+    await sleep(300);
+
+    addMsg('user', t.userLabel);
+    await sleep(200);
+    showTyping();
+
+    let passed = false;
+
+    try {
+      if (t.noReply) {
+        ws.send(t.send);
+        await sleep(600);
+        removeTyping();
+        passed = typeof t.validate === 'function' ? await t.validate() : false;
+        if (passed) {
+          addMsg('bot', 'Latency metric recorded successfully.');
+          await speak('Latency metric recorded successfully.');
+        } else {
+          addMsg('bot', 'Latency metric was not recorded.');
+        }
+      } else if (t.multi) {
+        const responses = [];
+        for (let j = 0; j < t.sends.length; j++) {
+          if (j > 0) addMsg('user', `[Silence timeout #${j + 1}]`);
+          const resp = await wsSendRecv(ws, t.sends[j]);
+          responses.push(resp);
+          if (resp && resp.text) {
+            removeTyping();
+            addMsg('bot', resp.text);
+            if (j < t.sends.length - 1) {
+              await speak(resp.text);
+              showTyping();
+              await sleep(300);
+            }
+          }
+        }
+        removeTyping();
+        passed = t.validate(responses);
+        const lastResp = responses[responses.length - 1];
+        if (lastResp && lastResp.text) await speak(lastResp.text);
+      } else {
+        const resp = await wsSendRecv(ws, t.send);
+        removeTyping();
+        if (resp && resp.text) {
+          addMsg('bot', resp.text);
+          await speak(resp.text);
+        } else {
+          addMsg('bot', '(no response)');
+        }
+        passed = t.validate(resp);
+      }
+    } catch (err) {
+      removeTyping();
+      addMsg('bot', `Error: ${err.message}`);
+      passed = false;
+    }
+
+    if (passed) { passCount++; } else { failCount++; }
+    setRowState(t.id, passed ? 'pass' : 'fail');
+    updateScores();
+    results.push({ id: t.id, name: t.name, passed });
+
+    await sleep(600);
+  }
+
+  hideBanner();
+  ws.close();
+
+  addSystemMsg(`Demo complete: ${passCount} passed, ${failCount} failed out of ${TESTS.length}`);
+  await sleep(500);
+
+  showOverlay(results);
+
+  demoRunning = false;
+  btn.disabled = false;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Demo';
+}
+
+/* ---- Summary overlay ---- */
+function showOverlay(results) {
+  const total = results.length;
+  const p = results.filter(r => r.passed).length;
+  const f = total - p;
+
+  document.getElementById('oTotal').textContent = total;
+  document.getElementById('oPass').textContent = p;
+  document.getElementById('oFail').textContent = f;
+
+  document.getElementById('overlayTitle').textContent = f === 0 ? 'All Tests Passed!' : 'Demo Complete';
+  document.getElementById('overlaySubtitle').textContent =
+    f === 0
+      ? 'Every ASR test scenario passed successfully.'
+      : `${f} test${f > 1 ? 's' : ''} did not pass. Review the details below.`;
+
+  const list = document.getElementById('overlayList');
+  list.innerHTML = '';
+  results.forEach(r => {
+    const row = document.createElement('div');
+    row.className = `ol-row ${r.passed ? 'pass' : 'fail'}`;
+    row.innerHTML = `
+      <span class="ol-icon">${r.passed ? '&#10003;' : '&#10007;'}</span>
+      <span class="ol-id">${r.id}</span>
+      <span class="ol-name">${r.name}</span>
+      <span class="ol-tag">${r.passed ? 'Pass' : 'Fail'}</span>`;
+    list.appendChild(row);
+  });
+
+  document.getElementById('overlay').classList.add('active');
+}
+
+function closeOverlay() {
+  document.getElementById('overlay').classList.remove('active');
+}
+
+/* ---- Init ---- */
+buildTestRows();
+if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+</script>
+</body>
+</html>

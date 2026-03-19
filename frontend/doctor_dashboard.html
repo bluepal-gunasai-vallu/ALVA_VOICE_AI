@@ -1,0 +1,2336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ALVA · Doctor Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<style>
+/* ══════════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════════ */
+:root {
+  --ink-900: #0a0f1e;
+  --ink-800: #111827;
+  --ink-700: #1f2937;
+  --ink-600: #374151;
+  --ink-400: #6b7280;
+  --ink-300: #9ca3af;
+  --ink-200: #e5e7eb;
+  --ink-100: #f3f4f6;
+  --ink-50:  #f9fafb;
+  --canvas:  #f1f5f9;
+  --white:   #ffffff;
+
+  --cyan:        #0891b2;
+  --cyan-l:      #06b6d4;
+  --cyan-dim:    rgba(8,145,178,0.09);
+  --cyan-glow:   rgba(8,145,178,0.25);
+  --emerald:     #059669;
+  --emerald-dim: rgba(5,150,105,0.10);
+  --rose:        #e11d48;
+  --rose-dim:    rgba(225,29,72,0.09);
+  --amber:       #d97706;
+  --amber-dim:   rgba(217,119,6,0.10);
+  --violet:      #7c3aed;
+  --violet-dim:  rgba(124,58,237,0.10);
+
+  --r4:4px; --r6:6px; --r8:8px; --r12:12px; --r16:16px; --r24:24px; --r99:999px;
+
+  --sh-xs: 0 1px 2px rgba(0,0,0,0.05);
+  --sh-sm: 0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.04);
+  --sh-md: 0 4px 16px rgba(0,0,0,0.08),0 1px 3px rgba(0,0,0,0.04);
+  --sh-lg: 0 8px 32px rgba(0,0,0,0.10),0 2px 6px rgba(0,0,0,0.04);
+
+  --ease: cubic-bezier(0.16,1,0.3,1);
+  --dur: 0.22s;
+}
+
+/* ══════════════════════════════════════
+   RESET
+══════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;background:var(--canvas);color:var(--ink-800);min-height:100vh;line-height:1.5;}
+button{font-family:inherit;cursor:pointer;border:none;background:none;}
+input,select{font-family:inherit;color:inherit;}
+
+/* ══════════════════════════════════════
+   LAYOUT
+══════════════════════════════════════ */
+.layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh;}
+
+/* ══════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════ */
+.sidebar{
+  background:var(--ink-900);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;
+  overflow-y:auto;
+  border-right:1px solid rgba(255,255,255,0.06);
+}
+.sidebar-brand{
+  padding:24px 20px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  display:flex;align-items:center;gap:11px;flex-shrink:0;
+}
+.brand-mark{
+  width:36px;height:36px;border-radius:var(--r8);
+  background:linear-gradient(135deg,var(--cyan),#0e7490);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;box-shadow:0 4px 14px var(--cyan-glow);flex-shrink:0;
+}
+.brand-info{display:flex;flex-direction:column;gap:1px;}
+.brand-name{font-size:15px;font-weight:700;color:#fff;letter-spacing:-0.02em;}
+.brand-sub{font-size:10px;font-weight:500;color:rgba(255,255,255,0.32);letter-spacing:0.08em;text-transform:uppercase;}
+
+.sidebar-body{padding:16px 12px;flex:1;display:flex;flex-direction:column;gap:2px;}
+.nav-section-label{
+  font-size:10px;font-weight:600;color:rgba(255,255,255,0.22);
+  letter-spacing:0.12em;text-transform:uppercase;
+  padding:0 8px;margin:12px 0 4px;
+}
+.nav-section-label:first-child{margin-top:0;}
+
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 10px;border-radius:var(--r8);
+  font-size:13px;font-weight:500;color:rgba(255,255,255,0.46);
+  cursor:pointer;transition:all var(--dur) var(--ease);
+  user-select:none;
+}
+.nav-item:hover{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.82);}
+.nav-item.active{background:rgba(8,145,178,0.2);color:var(--cyan-l);}
+.nav-item.active .ni{background:rgba(8,145,178,0.25);}
+.ni{
+  width:30px;height:30px;border-radius:var(--r6);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0;
+  transition:background var(--dur);
+}
+
+/* ── REMOVED: sidebar-footer / doctor-card ── */
+
+/* ══════════════════════════════════════
+   MAIN
+══════════════════════════════════════ */
+.main{display:flex;flex-direction:column;min-height:100vh;overflow:hidden;}
+
+/* Topbar */
+.topbar{
+  background:var(--white);border-bottom:1px solid var(--ink-200);
+  height:58px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;position:sticky;top:0;z-index:50;box-shadow:var(--sh-xs);
+}
+.topbar-left{display:flex;align-items:center;gap:6px;}
+.bc-sep{color:var(--ink-300);font-size:13px;}
+.bc{font-size:13px;font-weight:500;color:var(--ink-400);}
+.bc.active{color:var(--ink-800);font-weight:600;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+
+/* ══════════════════════════════════════
+   PAGES (view switching)
+══════════════════════════════════════ */
+.page{
+  display:none;
+  flex-direction:column;gap:24px;
+  padding:28px;
+  flex:1;
+  animation:rise 0.32s var(--ease) both;
+}
+.page.active{display:flex;}
+@keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+
+/* Page header */
+.pg-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.pg-title{font-size:21px;font-weight:700;letter-spacing:-0.03em;color:var(--ink-900);line-height:1;}
+.pg-sub{font-size:13px;color:var(--ink-400);margin-top:4px;}
+.pg-actions{display:flex;gap:8px;align-items:center;}
+
+/* Buttons */
+.btn{
+  height:38px;padding:0 16px;border-radius:var(--r8);
+  font-size:13px;font-weight:600;
+  display:inline-flex;align-items:center;gap:7px;
+  transition:all var(--dur) var(--ease);white-space:nowrap;border:1px solid transparent;
+}
+.btn svg{width:14px;height:14px;flex-shrink:0;}
+.btn-outline{background:var(--white);color:var(--ink-600);border-color:var(--ink-200);box-shadow:var(--sh-xs);}
+.btn-outline:hover{background:var(--ink-50);color:var(--ink-800);border-color:var(--ink-300);box-shadow:var(--sh-sm);transform:translateY(-1px);}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),#0e7490);color:#fff;box-shadow:0 4px 14px var(--cyan-glow);}
+.btn-primary:hover{box-shadow:0 6px 22px rgba(8,145,178,0.38);transform:translateY(-1px);}
+.btn-primary:active,.btn-outline:active{transform:translateY(0);}
+
+/* ══════════════════════════════════════
+   STAT CARDS
+══════════════════════════════════════ */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.stat-card{
+  background:var(--white);border:1px solid var(--ink-200);
+  border-radius:var(--r16);padding:18px 20px;
+  box-shadow:var(--sh-sm);
+  transition:transform var(--dur) var(--ease),box-shadow var(--dur) var(--ease);
+  display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden;
+}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0;}
+.stat-card.s-cyan::before  {background:linear-gradient(90deg,var(--cyan),var(--cyan-l));}
+.stat-card.s-green::before {background:linear-gradient(90deg,var(--emerald),#34d399);}
+.stat-card.s-rose::before  {background:linear-gradient(90deg,var(--rose),#f43f5e);}
+.stat-card.s-violet::before{background:linear-gradient(90deg,var(--violet),#a855f7);}
+.stat-card.s-amber::before {background:linear-gradient(90deg,var(--amber),#f59e0b);}
+.stat-card.s-slate::before {background:linear-gradient(90deg,#475569,#64748b);}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg);}
+.stat-top{display:flex;align-items:flex-start;justify-content:space-between;}
+.stat-ico{width:40px;height:40px;border-radius:var(--r8);display:flex;align-items:center;justify-content:center;font-size:18px;}
+.stat-ico.cyan  {background:var(--cyan-dim);}
+.stat-ico.green {background:var(--emerald-dim);}
+.stat-ico.rose  {background:var(--rose-dim);}
+.stat-ico.violet{background:var(--violet-dim);}
+.stat-ico.amber {background:var(--amber-dim);}
+.stat-ico.slate {background:rgba(71,85,105,0.10);}
+.stat-trend{font-size:11px;font-weight:600;padding:3px 8px;border-radius:var(--r99);background:var(--ink-100);color:var(--ink-400);}
+.stat-num{font-size:34px;font-weight:700;letter-spacing:-0.04em;line-height:1;color:var(--ink-900);font-family:'DM Mono',monospace;}
+.stat-lbl{font-size:12px;font-weight:500;color:var(--ink-400);margin-top:2px;}
+
+/* ══════════════════════════════════════
+   SECTION CARD
+══════════════════════════════════════ */
+.sc{background:var(--white);border:1px solid var(--ink-200);border-radius:var(--r16);box-shadow:var(--sh-md);overflow:hidden;}
+.sc-head{
+  padding:16px 22px;border-bottom:1px solid var(--ink-100);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+}
+.sc-title-g{display:flex;align-items:center;gap:9px;}
+.sc-ico{width:32px;height:32px;border-radius:var(--r8);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.sc-ico.cyan  {background:var(--cyan-dim);}
+.sc-ico.violet{background:var(--violet-dim);}
+.sc-ico.green {background:var(--emerald-dim);}
+.sc-ico.rose  {background:var(--rose-dim);}
+.sc-ico.amber {background:var(--amber-dim);}
+.sc-title{font-size:14px;font-weight:700;color:var(--ink-900);letter-spacing:-0.02em;}
+.sc-sub  {font-size:12px;color:var(--ink-400);margin-top:1px;}
+.sc-head-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+
+/* ══════════════════════════════════════
+   SEARCH + REFRESH
+══════════════════════════════════════ */
+.srch-wrap{position:relative;display:flex;align-items:center;}
+.srch-ico{position:absolute;left:10px;width:14px;height:14px;color:var(--ink-300);pointer-events:none;}
+.srch-inp{
+  height:36px;padding:0 12px 0 32px;
+  border:1px solid var(--ink-200);border-radius:var(--r8);
+  background:var(--ink-50);font-size:13px;color:var(--ink-800);
+  outline:none;width:210px;transition:all var(--dur) var(--ease);
+}
+.srch-inp::placeholder{color:var(--ink-300);}
+.srch-inp:focus{background:var(--white);border-color:var(--cyan);box-shadow:0 0 0 3px var(--cyan-dim);}
+.btn-ref{
+  height:36px;padding:0 12px;border-radius:var(--r8);
+  border:1px solid var(--ink-200);background:var(--ink-50);
+  color:var(--ink-600);font-size:12.5px;font-weight:600;
+  display:inline-flex;align-items:center;gap:6px;
+  transition:all var(--dur) var(--ease);
+}
+.btn-ref svg{width:13px;height:13px;}
+.btn-ref:hover{background:var(--white);border-color:var(--cyan);color:var(--cyan);box-shadow:var(--sh-sm);}
+.btn-ref.spinning svg{animation:spin 0.7s linear infinite;}
+
+/* ══════════════════════════════════════
+   LOADING
+══════════════════════════════════════ */
+.load-wrap{display:none;flex-direction:column;align-items:center;gap:12px;padding:56px 24px;color:var(--ink-300);font-size:13px;}
+.load-wrap.active{display:flex;}
+.spin-ring{width:34px;height:34px;border-radius:50%;border:3px solid var(--ink-200);border-top-color:var(--cyan);animation:spin 0.75s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ══════════════════════════════════════
+   TABLE
+══════════════════════════════════════ */
+.tbl-wrap{overflow-x:auto;overflow-y:auto;max-height:450px;}
+.tbl-wrap::-webkit-scrollbar{width:5px;height:5px;}
+.tbl-wrap::-webkit-scrollbar-track{background:transparent;}
+.tbl-wrap::-webkit-scrollbar-thumb{background:var(--ink-200);border-radius:3px;}
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+thead{position:sticky;top:0;z-index:2;}
+thead th{padding:10px 16px;text-align:left;font-size:10.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-400);background:var(--ink-50);border-bottom:1px solid var(--ink-200);white-space:nowrap;}
+tbody tr{border-bottom:1px solid var(--ink-100);transition:background var(--dur);}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--ink-50);}
+tbody tr.is-today{background:linear-gradient(90deg,rgba(8,145,178,0.05) 0%,transparent 100%);border-left:3px solid var(--cyan);}
+tbody tr.is-today:hover{background:linear-gradient(90deg,rgba(8,145,178,0.08) 0%,var(--ink-50) 100%);}
+tbody td{padding:12px 16px;vertical-align:middle;color:var(--ink-600);}
+.td-id{font-family:'DM Mono',monospace;font-size:11.5px;color:var(--ink-300);}
+.td-name{font-weight:600;color:var(--ink-900);}
+.td-email{font-size:12.5px;}
+.td-dt{font-family:'DM Mono',monospace;font-size:12px;white-space:nowrap;}
+.today-tag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:var(--r4);background:var(--cyan-dim);color:var(--cyan);font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;font-family:'DM Mono',monospace;vertical-align:middle;}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:var(--r99);font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;border:1px solid transparent;white-space:nowrap;}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.badge-confirmed{background:var(--emerald-dim);color:#065f46;border-color:rgba(5,150,105,0.18);}
+.badge-confirmed::before{background:var(--emerald);}
+.badge-cancelled{background:var(--rose-dim);color:#9f1239;border-color:rgba(225,29,72,0.18);}
+.badge-cancelled::before{background:var(--rose);}
+.badge-pending{background:var(--amber-dim);color:#92400e;border-color:rgba(217,119,6,0.18);}
+.badge-pending::before{background:var(--amber);animation:blink 1.5s infinite;}
+.badge-RESCHEDULED{background:var(--violet-dim);color:#4c1d95;border-color:rgba(124,58,237,0.18);}
+.badge-RESCHEDULED::before{background:var(--violet);animation:blink 1.5s infinite;}
+.badge-noshow{background:rgba(107,114,128,0.10);color:#374151;border-color:rgba(107,114,128,0.2);}
+.badge-noshow::before{background:#6b7280;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* Action buttons */
+.act-cell{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
+.btn-act{height:27px;padding:0 10px;border-radius:var(--r6);border:1px solid var(--ink-200);background:var(--white);font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:4px;color:var(--ink-600);transition:all var(--dur) var(--ease);white-space:nowrap;}
+.btn-act:hover{transform:translateY(-1px);box-shadow:var(--sh-sm);}
+.btn-act.r:hover{background:var(--cyan-dim);border-color:rgba(8,145,178,0.3);color:var(--cyan);}
+.btn-act.f:hover{background:var(--violet-dim);border-color:rgba(124,58,237,0.3);color:var(--violet);}
+.btn-act.noshow:hover{background:rgba(107,114,128,0.10);border-color:rgba(107,114,128,0.3);color:#374151;}
+
+/* Empty state */
+.empty-wrap{display:none;flex-direction:column;align-items:center;gap:10px;padding:60px 24px;color:var(--ink-300);text-align:center;}
+.empty-wrap.active{display:flex;}
+.empty-wrap .ei{font-size:36px;}
+.empty-wrap p{font-size:13.5px;}
+
+/* ══════════════════════════════════════
+   SCHEDULE
+══════════════════════════════════════ */
+.sched-body{padding:22px;}
+.sched-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;align-items:end;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field-lbl{font-size:11px;font-weight:700;color:var(--ink-400);letter-spacing:0.08em;text-transform:uppercase;}
+.field-inp{height:40px;padding:0 12px;border:1px solid var(--ink-200);border-radius:var(--r8);background:var(--ink-50);font-size:13.5px;font-family:'Sora',sans-serif;color:var(--ink-800);outline:none;transition:all var(--dur) var(--ease);width:100%;}
+.field-inp:focus{background:var(--white);border-color:var(--cyan);box-shadow:0 0 0 3px var(--cyan-dim);}
+.field-inp:disabled{opacity:0.38;cursor:not-allowed;}
+.alert{display:none;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:var(--r8);font-size:13px;font-weight:500;margin-top:16px;animation:rise 0.25s var(--ease) both;}
+.alert.visible{display:flex;}
+.alert svg{width:15px;height:15px;flex-shrink:0;margin-top:1px;}
+.alert-err{background:var(--rose-dim);border:1px solid rgba(225,29,72,0.2);color:#9f1239;}
+.alert-ok {background:var(--emerald-dim);border:1px solid rgba(5,150,105,0.2);color:#065f46;}
+
+/* ══════════════════════════════════════
+   INFO ROWS (summary panel)
+══════════════════════════════════════ */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:22px;}
+.info-block{background:var(--ink-50);border:1px solid var(--ink-200);border-radius:var(--r12);padding:16px;}
+.info-block-title{font-size:11px;font-weight:700;color:var(--ink-400);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;}
+.info-block-val{font-size:28px;font-weight:700;color:var(--ink-900);font-family:'DM Mono',monospace;line-height:1;}
+.info-block-sub{font-size:12px;color:var(--ink-400);margin-top:3px;}
+.info-block.cyan  .info-block-val{color:var(--cyan);}
+.info-block.green .info-block-val{color:var(--emerald);}
+.info-block.rose  .info-block-val{color:var(--rose);}
+.info-block.violet .info-block-val{color:var(--violet);}
+
+/* ══════════════════════════════════════
+   REMINDERS / FEEDBACK PAGE
+══════════════════════════════════════ */
+.reminder-list{padding:22px;display:flex;flex-direction:column;gap:12px;}
+.reminder-item{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 16px;border-radius:var(--r12);
+  border:1px solid var(--ink-200);background:var(--ink-50);
+  transition:all var(--dur) var(--ease);
+}
+.reminder-item:hover{background:var(--white);box-shadow:var(--sh-sm);}
+.ri-av{width:38px;height:38px;border-radius:50%;background:var(--cyan-dim);border:1.5px solid rgba(8,145,178,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.ri-info{flex:1;min-width:0;}
+.ri-name{font-size:13.5px;font-weight:600;color:var(--ink-900);}
+.ri-email{font-size:12px;color:var(--ink-400);margin-top:1px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.ri-actions{display:flex;gap:6px;}
+
+/* ══════════════════════════════════════
+   CALENDAR
+══════════════════════════════════════ */
+.cal-inner{padding:0;}
+.cal-inner iframe{display:block;width:100%;border:none;}
+
+/* ══════════════════════════════════════
+   TWO-COL GRID
+══════════════════════════════════════ */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+
+/* ══════════════════════════════════════
+   TOASTS
+══════════════════════════════════════ */
+.toast-layer{position:fixed;bottom:22px;right:22px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
+.toast{background:var(--ink-900);border:1px solid rgba(255,255,255,0.08);border-radius:var(--r12);box-shadow:0 12px 40px rgba(0,0,0,0.35);padding:11px 15px;font-size:13px;font-weight:500;color:rgba(255,255,255,0.9);display:flex;align-items:center;gap:10px;min-width:230px;max-width:310px;animation:t-in 0.3s var(--ease) both,t-out 0.3s var(--ease) 3.2s both;}
+.t-ico{font-size:15px;flex-shrink:0;}
+@keyframes t-in {from{opacity:0;transform:translateX(18px) scale(0.96);}to{opacity:1;transform:translateX(0) scale(1);}}
+@keyframes t-out{to{opacity:0;transform:translateX(14px) scale(0.97);}}
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════ */
+@media(max-width:1100px){.stats-row{grid-template-columns:repeat(3,1fr);}.two-col{grid-template-columns:1fr;}.info-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:820px){.layout{grid-template-columns:1fr;}.sidebar{display:none;}.page{padding:18px 14px;}.topbar{padding:0 14px;}.stats-row{grid-template-columns:repeat(2,1fr);}.srch-inp{width:150px;}}
+@media(max-width:500px){.stats-row{grid-template-columns:1fr 1fr;}.stat-num{font-size:28px;}.info-grid{grid-template-columns:1fr;}}
+</style>
+<style>
+.asr-gauge-ring{transform:rotate(-90deg);transform-origin:50% 50%;}
+.asr-spark-bar{transition:height 0.4s cubic-bezier(0.16,1,0.3,1);}
+.asr-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--ink-100);}
+.asr-row:last-child{border-bottom:none;}
+.asr-pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:var(--r99);border:1px solid transparent;white-space:nowrap;}
+.asr-pill.high  {background:var(--emerald-dim);color:#065f46;border-color:rgba(5,150,105,0.18);}
+.asr-pill.medium{background:var(--amber-dim);color:#92400e;border-color:rgba(217,119,6,0.18);}
+.asr-pill.low   {background:var(--rose-dim);color:#9f1239;border-color:rgba(225,29,72,0.18);}
+.asr-bar-track{flex:1;height:6px;background:var(--ink-200);border-radius:3px;overflow:hidden;}
+.asr-bar-fill{height:100%;border-radius:3px;transition:width 0.5s var(--ease);}
+</style>
+</head>
+
+<body>
+<div class="layout">
+
+  <!-- ════════════ SIDEBAR ════════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">🏥</div>
+      <div class="brand-info">
+        <div class="brand-name">ALVA</div>
+        <div class="brand-sub">Doctor Portal</div>
+      </div>
+    </div>
+
+    <div class="sidebar-body">
+      <div class="nav-section-label">Overview</div>
+      <div class="nav-item active" data-page="dashboard" onclick="navigate(this)">
+        <div class="ni">📊</div> Dashboard
+      </div>
+      <div class="nav-item" data-page="appointments" onclick="navigate(this)">
+        <div class="ni">📋</div> Appointments
+      </div>
+      <div class="nav-item" data-page="schedule" onclick="navigate(this)">
+        <div class="ni">🗓️</div> Schedule
+      </div>
+
+      <div class="nav-section-label">Tools</div>
+      <div class="nav-item" data-page="calendar" onclick="navigate(this)">
+        <div class="ni">📆</div> Calendar
+      </div>
+      <div class="nav-item" data-page="reminders" onclick="navigate(this)">
+        <div class="ni">🔔</div> Reminders
+      </div>
+      <div class="nav-item" data-page="feedback" onclick="navigate(this)">
+        <div class="ni">💬</div> Feedback
+      </div>
+      <div class="nav-item" data-page="noshow" onclick="navigate(this)">
+        <div class="ni">🚫</div> No-Shows
+      </div>
+      <div class="nav-item" id="nav-handoff" data-page="handoff" onclick="navigate(this)" style="position:relative;">
+        <div class="ni">🧑‍⚕️</div> Live Handoff
+        <span id="handoff-badge" style="display:none;position:absolute;top:7px;right:10px;background:var(--rose);color:#fff;font-size:9px;font-weight:700;border-radius:var(--r99);padding:2px 6px;animation:blink 1s infinite;">NEW</span>
+      </div>
+      <div class="nav-item" data-page="asr" onclick="navigate(this)">
+        <div class="ni">🎤</div> ASR Confidence
+      </div>
+    </div>
+
+    <!-- Doctor profile card REMOVED -->
+
+  </aside>
+
+  <!-- ════════════ MAIN ════════════ -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="bc">ALVA</span>
+        <span class="bc-sep">›</span>
+        <span class="bc active" id="breadcrumb">Dashboard</span>
+      </div>
+
+    </header>
+
+    <!-- ══════════════════════════════════
+         PAGE: DASHBOARD
+    ══════════════════════════════════ -->
+    <div class="page active" id="page-dashboard">
+      <div class="pg-header">
+        <div>
+          <div class="pg-title">Good morning, Doctor 👋</div>
+          <div class="pg-sub" id="todayLabel">Loading…</div>
+        </div>
+        <div class="pg-actions">
+          <button class="btn btn-outline" onclick="loadAppointments()">
+            <svg id="refreshIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card s-cyan">
+          <div class="stat-top"><div class="stat-ico cyan">📋</div><div class="stat-trend" id="t-total">—</div></div>
+          <div><div class="stat-num" id="stat-total">—</div><div class="stat-lbl">Total Appointments</div></div>
+        </div>
+        <div class="stat-card s-green">
+          <div class="stat-top"><div class="stat-ico green">✅</div><div class="stat-trend" id="t-confirmed">—</div></div>
+          <div><div class="stat-num" id="stat-confirmed">—</div><div class="stat-lbl">Confirmed</div></div>
+        </div>
+        <div class="stat-card s-rose">
+          <div class="stat-top"><div class="stat-ico rose">❌</div><div class="stat-trend" id="t-cancelled">—</div></div>
+          <div><div class="stat-num" id="stat-cancelled">—</div><div class="stat-lbl">Cancelled</div></div>
+        </div>
+        <div class="stat-card s-violet">
+          <div class="stat-top"><div class="stat-ico violet">📅</div><div class="stat-trend">Today</div></div>
+          <div><div class="stat-num" id="stat-today">—</div><div class="stat-lbl">Today's Appointments</div></div>
+        </div>
+        <div class="stat-card s-amber">
+          <div class="stat-top"><div class="stat-ico amber">🔄</div><div class="stat-trend" id="t-rescheduled">—</div></div>
+          <div><div class="stat-num" id="stat-rescheduled">—</div><div class="stat-lbl">Rescheduled</div></div>
+        </div>
+        <div class="stat-card s-slate">
+          <div class="stat-top"><div class="stat-ico slate">🚫</div><div class="stat-trend" id="t-noshow">—</div></div>
+          <div><div class="stat-num" id="stat-noshow">—</div><div class="stat-lbl">No-Show</div></div>
+        </div>
+        <!-- P95 LATENCY -->
+        <div class="stat-card s-violet">
+        <div class="stat-top">
+            <div class="stat-ico violet">⚡</div>
+            <div class="stat-trend">Performance</div>
+        </div>
+
+        <div>
+            <div class="stat-num" id="stat-latency">—</div>
+            <div class="stat-lbl">P95 Latency (ms)</div>
+        </div>
+        </div>
+      </div>
+
+
+    </div>
+
+    <!-- ══════════════════════════════════
+         PAGE: APPOINTMENTS
+    ══════════════════════════════════ -->
+    <div class="page" id="page-appointments">
+      <div class="pg-header">
+        <div><div class="pg-title">Appointments</div><div class="pg-sub">View and manage all patient bookings</div></div>
+      </div>
+
+      <div class="sc">
+        <div class="sc-head">
+          <div class="sc-title-g"><div class="sc-ico cyan">📋</div><div><div class="sc-title">All Appointments</div><div class="sc-sub">Database records</div></div></div>
+          <div class="sc-head-r">
+            <div class="srch-wrap">
+              <svg class="srch-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input class="srch-inp" id="searchInput" type="text" placeholder="Search name or email…" oninput="filterAppointments()" />
+            </div>
+            <button class="btn-ref" id="refreshBtn" onclick="loadAppointments()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        <div class="load-wrap" id="loadWrap"><div class="spin-ring"></div><p>Loading appointments…</p></div>
+        <div class="tbl-wrap" id="tableWrap">
+          <table>
+            <thead><tr><th>#</th><th>Patient Name</th><th>Email</th><th>Service</th><th>Date &amp; Time</th><th>Status</th><th>Rating</th><th>Mark Complete</th><th>Mark No-Show</th></tr></thead>
+            <tbody id="apptBody"></tbody>
+          </table>
+        </div>
+        <div class="empty-wrap" id="emptyState"><div class="ei">🔍</div><p>No appointments found</p></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         PAGE: SCHEDULE
+    ══════════════════════════════════ -->
+    <div class="page" id="page-schedule">
+      <div class="pg-header">
+        <div><div class="pg-title">Availability Schedule</div><div class="pg-sub">Mark busy periods or leave days</div></div>
+      </div>
+
+      <div class="two-col">
+        <div class="sc">
+          <div class="sc-head"><div class="sc-title-g"><div class="sc-ico green">🗓️</div><div><div class="sc-title">Set Availability</div><div class="sc-sub">Update your schedule via /doctor/availability</div></div></div></div>
+          <div class="sched-body">
+            <div class="sched-grid">
+              <div class="field"><label class="field-lbl" for="schedDate">Date</label><input class="field-inp" type="date" id="schedDate" onchange="validateSched()" /></div>
+              <div class="field"><label class="field-lbl" for="schedStatus">Type</label>
+                <select class="field-inp" id="schedStatus" onchange="handleStatusChange()">
+                  <option value="BUSY">🔴 Busy</option>
+                  <option value="LEAVE">🟡 Full Day Leave</option>
+                </select>
+              </div>
+              <div class="field"><label class="field-lbl" for="schedStart">Start Time</label><input class="field-inp" type="time" id="schedStart" onchange="validateSched()" /></div>
+              <div class="field"><label class="field-lbl" for="schedEnd">End Time</label><input class="field-inp" type="time" id="schedEnd" onchange="validateSched()" /></div>
+            </div>
+            <div style="margin-top:18px;">
+              <button class="btn btn-primary" onclick="updateAvailability()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Update Schedule
+              </button>
+            </div>
+            <div class="alert alert-err" id="schedErr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span id="schedErrMsg">Error.</span></div>
+            <div class="alert alert-ok"  id="schedOk" ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span>Availability updated successfully!</span></div>
+          </div>
+        </div>
+
+        <div class="sc">
+          <div class="sc-head"><div class="sc-title-g"><div class="sc-ico amber">📌</div><div><div class="sc-title">Schedule Guide</div><div class="sc-sub">How availability blocking works</div></div></div></div>
+          <div style="padding:22px;display:flex;flex-direction:column;gap:12px;">
+            <div class="reminder-item"><div class="ri-av">🔴</div><div class="ri-info"><div class="ri-name">Busy</div><div class="ri-email">Block specific hours — patients cannot book during this window</div></div></div>
+            <div class="reminder-item"><div class="ri-av">🟡</div><div class="ri-info"><div class="ri-name">Full Day Leave</div><div class="ri-email">Marks the entire day as unavailable (00:00 – 23:59)</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         PAGE: CALENDAR
+    ══════════════════════════════════ -->
+    <div class="page" id="page-calendar">
+      <div class="pg-header">
+        <div><div class="pg-title">Google Calendar</div><div class="pg-sub">Your live schedule and appointment view</div></div>
+      </div>
+      <div class="sc">
+        <div class="sc-head"><div class="sc-title-g"><div class="sc-ico violet">📆</div><div><div class="sc-title">Calendar View</div><div class="sc-sub">Synced with Google Calendar</div></div></div></div>
+        <div class="cal-inner">
+          <iframe src="https://calendar.google.com/calendar/embed?src=vallugunasai05%40gmail.com&ctz=Asia%2FKolkata" height="620" title="Google Calendar"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         PAGE: REMINDERS
+    ══════════════════════════════════ -->
+    <div class="page" id="page-reminders">
+      <div class="pg-header">
+        <div><div class="pg-title">Reminders</div><div class="pg-sub">Send appointment reminders to patients</div></div>
+        <div class="pg-actions">
+          <button class="btn btn-outline" onclick="loadAppointments()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Reload
+          </button>
+        </div>
+      </div>
+      <div class="sc">
+        <div class="sc-head">
+          <div class="sc-title-g"><div class="sc-ico cyan">🔔</div><div><div class="sc-title">Send Reminders</div><div class="sc-sub">Eligible: Confirmed, Pending &amp; RESCHEDULED appointments</div></div></div>
+        </div>
+        <div class="reminder-list" id="reminderList">
+          <div class="empty-wrap active"><div class="ei">🔔</div><p>Load appointments first to send reminders</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         PAGE: FEEDBACK
+    ══════════════════════════════════ -->
+    <div class="page" id="page-feedback">
+      <div class="pg-header">
+        <div><div class="pg-title">Feedback &amp; Satisfaction</div><div class="pg-sub">Post-appointment feedback, ratings, and satisfaction trends</div></div>
+        <div class="pg-actions">
+          <button class="btn btn-outline" onclick="loadAppointments()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Reload
+          </button>
+        </div>
+      </div>
+
+      <!-- TC087: Aggregate Satisfaction Metric -->
+      <div class="sc" style="margin-bottom:20px;">
+        <div class="sc-head">
+          <div class="sc-title-g"><div class="sc-ico cyan">⭐</div><div><div class="sc-title">Satisfaction Overview</div><div class="sc-sub">Aggregate score across all completed appointments</div></div></div>
+        </div>
+        <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;padding:4px 0 12px;">
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <span style="font-size:13px;color:var(--ink-400);">Average Score</span>
+            <span id="stat-avg-score" style="font-size:32px;font-weight:700;color:var(--emerald);line-height:1;">—</span>
+            <span id="stat-feedback-total" style="font-size:12px;color:var(--ink-300);">0 responses</span>
+          </div>
+          <div style="flex:1;min-width:200px;">
+            <!-- TC087: Filter by service -->
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+              <label style="font-size:12px;color:var(--ink-400);">Filter by service:</label>
+              <input id="serviceFilter" type="text" placeholder="e.g. basic, specialist…"
+                style="height:28px;padding:0 10px;border:1px solid var(--ink-200);border-radius:var(--r6);font-size:12px;outline:none;width:160px;"
+                oninput="applyServiceFilter()" />
+              <button class="btn-act" style="font-size:11px;" onclick="document.getElementById('serviceFilter').value='';applyServiceFilter();">✕ Clear</button>
+            </div>
+            <!-- Trend chart -->
+            <div id="feedbackTrendChart" style="min-height:110px;">
+              <div style="text-align:center;padding:24px;color:var(--ink-300);font-size:13px;">No feedback scores yet</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feedback request list -->
+      <div class="sc">
+        <div class="sc-head">
+          <div class="sc-title-g"><div class="sc-ico violet">💬</div><div><div class="sc-title">Send Feedback Requests</div><div class="sc-sub">Eligible: Confirmed, Rescheduled &amp; Completed appointments</div></div></div>
+        </div>
+        <div class="reminder-list" id="feedbackList">
+          <div class="empty-wrap active"><div class="ei">💬</div><p>Load appointments first to request feedback</p></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════
+         PAGE: NO-SHOW
+    ══════════════════════════════════ -->
+<div class="page" id="page-noshow">
+  <div class="pg-header">
+    <div>
+      <div class="pg-title">No-Show Patients</div>
+      <div class="pg-sub">Patients who missed their appointment</div>
+    </div>
+
+    <div class="pg-actions">
+      <button class="btn btn-outline" onclick="loadAppointments()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"/>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+        Reload
+      </button>
+    </div>
+  </div>
+
+  <!-- No-Show patient list -->
+  <div class="sc">
+    <div class="sc-head">
+      <div class="sc-title-g">
+        <div class="sc-ico rose">🚫</div>
+        <div>
+          <div class="sc-title">Missed Appointments</div>
+          <div class="sc-sub">Send ALVA voice follow-up</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reminder-list" id="noshowList">
+      <div class="empty-wrap active">
+        <div class="ei">🚫</div>
+        <p>No no-show patients yet</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+    <!-- ══════════════════════════════════
+         PAGE: LIVE HANDOFF
+    ══════════════════════════════════ -->
+    <div class="page" id="page-handoff">
+      <div class="pg-header">
+        <div><div class="pg-title">Live Patient Handoff 🧑‍⚕️</div><div class="pg-sub">Real-time voice relay</div></div>
+      </div>
+      <!-- Empty state -->
+      <div id="ho-empty" style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:80px 24px;color:var(--ink-300);text-align:center;">
+        <div style="font-size:52px;">🔕</div>
+        <p style="font-size:15px;font-weight:500;">No active handoff sessions</p>
+        <p style="font-size:13px;opacity:0.6;">When a patient requests a human agent, the session will appear here automatically.</p>
+      </div>
+      <!-- Active session -->
+      <div id="ho-panel" style="display:none;flex-direction:column;gap:18px;">
+        <div class="sc">
+          <div class="sc-head">
+            <div class="sc-title-g"><div class="sc-ico rose" style="font-size:18px;">🧑‍⚕️</div><div><div class="sc-title" id="ho-name">Patient</div><div class="sc-sub" id="ho-email">—</div></div></div>
+            <div class="sc-head-r">
+              <span id="ho-reason-badge" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:var(--r99);background:var(--amber-dim);color:var(--amber);border:1px solid rgba(217,119,6,0.2);">—</span>
+              <button class="btn btn-outline" style="border-color:var(--rose);color:var(--rose);" onclick="endHandoff()">✕ End Session</button>
+            </div>
+          </div>
+          <div style="padding:14px 22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">
+            <div class="info-block cyan" style="padding:12px;"><div class="info-block-title">Service</div><div class="info-block-val" id="ho-service" style="font-size:15px;">—</div></div>
+            <div class="info-block violet" style="padding:12px;"><div class="info-block-title">Intent</div><div class="info-block-val" id="ho-intent" style="font-size:15px;">—</div></div>
+            <div class="info-block" style="padding:12px;"><div class="info-block-title">Appt State</div><div class="info-block-val" id="ho-appt-state" style="font-size:15px;">—</div></div>
+          </div>
+        </div>
+        <div class="two-col">
+          <!-- Transcript -->
+          <div class="sc" style="display:flex;flex-direction:column;">
+            <div class="sc-head"><div class="sc-title-g"><div class="sc-ico cyan">💬</div><div><div class="sc-title">Live Transcript</div><div class="sc-sub">Patient ↔ Doctor messages</div></div></div></div>
+            <div id="ho-transcript" style="padding:16px 20px;flex:1;min-height:260px;max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
+              <div id="ho-placeholder" style="text-align:center;color:var(--ink-300);font-size:12px;padding:24px 0;">Waiting for messages…</div>
+            </div>
+          </div>
+          <!-- Doctor Mic -->
+          <div class="sc">
+            <div class="sc-head"><div class="sc-title-g"><div class="sc-ico green">🎙️</div><div><div class="sc-title">Doctor Microphone</div><div class="sc-sub">Hold button → speak → patient hears you</div></div></div></div>
+            <div style="padding:28px 22px;display:flex;flex-direction:column;align-items:center;gap:18px;">
+              <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+                <div id="mic-ring" style="position:absolute;width:110px;height:110px;border-radius:50%;border:2px solid var(--cyan);opacity:0;pointer-events:none;"></div>
+                <button id="mic-btn"
+                  onmousedown="startDoctorSpeech()" onmouseup="stopDoctorSpeech()"
+                  ontouchstart="startDoctorSpeech()" ontouchend="stopDoctorSpeech()"
+                  style="width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),#0e7490);color:#fff;font-size:34px;border:none;cursor:pointer;box-shadow:0 6px 24px var(--cyan-glow);transition:all 0.18s;display:flex;align-items:center;justify-content:center;user-select:none;">
+                  🎙️
+                </button>
+              </div>
+              <div id="mic-status" style="font-size:12px;color:var(--ink-400);font-weight:500;">Hold button to speak to patient</div>
+              <div id="mic-preview" style="width:100%;min-height:36px;background:var(--ink-50);border:1px solid var(--ink-200);border-radius:var(--r8);padding:8px 14px;font-size:13px;color:var(--ink-400);text-align:center;font-style:italic;">—</div>
+              <div style="width:100%;display:flex;gap:8px;">
+                <input id="doc-type-input" type="text" placeholder="Or type a message…"
+                  style="flex:1;height:38px;padding:0 12px;border:1px solid var(--ink-200);border-radius:var(--r8);font-size:13px;font-family:inherit;outline:none;background:var(--white);"
+                  onkeydown="if(event.key==='Enter')sendDoctorText()" />
+                <button class="btn btn-primary" onclick="sendDoctorText()" style="height:38px;padding:0 14px;">Send</button>
+              </div>
+              <div id="agent-conn-status" style="font-size:11px;padding:5px 12px;border-radius:var(--r99);background:var(--emerald-dim);color:#065f46;border:1px solid rgba(5,150,105,0.2);font-weight:600;">
+                🟢 Connected to patient
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+<div class="page" id="page-asr">
+
+  <!-- Header -->
+  <div class="pg-header">
+    <div>
+      <div class="pg-title">ASR Confidence Monitor 🎤</div>
+      <div class="pg-sub">Speech-to-text recognition quality · Live session scores · Escalation risk</div>
+    </div>
+    <div class="pg-actions">
+      <button class="btn btn-outline" onclick="loadAsrMetrics()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI row -->
+  <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
+
+    <!-- Average score gauge -->
+    <div class="stat-card s-cyan" style="align-items:center;padding:20px 16px;gap:10px;">
+      <svg width="90" height="90" viewBox="0 0 90 90">
+        <circle cx="45" cy="45" r="36" fill="none" stroke="var(--ink-200)" stroke-width="8"/>
+        <circle id="asr-gauge-arc" cx="45" cy="45" r="36" fill="none"
+                stroke="var(--cyan)" stroke-width="8" stroke-linecap="round"
+                stroke-dasharray="226" stroke-dashoffset="226"
+                class="asr-gauge-ring" style="transition:stroke-dashoffset 0.8s cubic-bezier(0.16,1,0.3,1),stroke 0.5s;"/>
+        <text x="45" y="49" text-anchor="middle" font-size="18" font-weight="700"
+              fill="var(--ink-900)" font-family="'DM Mono',monospace" id="asr-gauge-text">—</text>
+      </svg>
+      <div style="text-align:center;">
+        <div class="stat-lbl">Avg Confidence</div>
+        <div style="font-size:10px;color:var(--ink-300);margin-top:2px;">0 = worst · 1 = best</div>
+      </div>
+    </div>
+
+    <!-- Total turns -->
+    <div class="stat-card s-violet">
+      <div class="stat-top"><div class="stat-ico violet">🔢</div><div class="stat-trend">Session</div></div>
+      <div><div class="stat-num" id="asr-total-turns">—</div><div class="stat-lbl">Total ASR Turns</div></div>
+    </div>
+
+    <!-- Low-confidence turns -->
+    <div class="stat-card s-amber">
+      <div class="stat-top"><div class="stat-ico amber">⚠️</div><div class="stat-trend" id="asr-low-rate">—</div></div>
+      <div><div class="stat-num" id="asr-low-count">—</div><div class="stat-lbl">Low-Confidence Turns</div></div>
+    </div>
+
+    <!-- Escalated turns -->
+    <div class="stat-card s-rose">
+      <div class="stat-top"><div class="stat-ico rose">🆘</div><div class="stat-trend">ASR trigger</div></div>
+      <div><div class="stat-num" id="asr-esc-count">—</div><div class="stat-lbl">Escalations via ASR</div></div>
+    </div>
+
+  </div>
+
+  <!-- Threshold info + sparkline chart -->
+  <div class="two-col">
+
+    <!-- Sparkline / trend chart -->
+    <div class="sc">
+      <div class="sc-head">
+        <div class="sc-title-g">
+          <div class="sc-ico cyan">📈</div>
+          <div><div class="sc-title">Score History</div><div class="sc-sub">Last 50 ASR turns — red line = 0.5 threshold</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:var(--ink-400);">Filter session:</span>
+          <input id="asr-session-filter" type="text" placeholder="session id…"
+            style="height:28px;padding:0 10px;border:1px solid var(--ink-200);border-radius:var(--r6);font-size:11.5px;outline:none;width:170px;font-family:inherit;"
+            oninput="renderAsrChart()" />
+        </div>
+      </div>
+      <div style="padding:18px 22px;">
+        <div id="asr-chart-wrap" style="position:relative;height:140px;display:flex;align-items:flex-end;gap:3px;overflow-x:auto;">
+          <div style="text-align:center;padding:40px;color:var(--ink-300);font-size:13px;width:100%;">No ASR data yet</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend + health summary -->
+    <div class="sc">
+      <div class="sc-head">
+        <div class="sc-title-g">
+          <div class="sc-ico green">🏥</div>
+          <div><div class="sc-title">Health Summary</div><div class="sc-sub">Confidence thresholds &amp; quality bands</div></div>
+        </div>
+      </div>
+      <div style="padding:22px;display:flex;flex-direction:column;gap:14px;">
+
+        <!-- Quality bands -->
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="asr-pill high">HIGH ≥ 0.75</span>
+            <div class="asr-bar-track"><div class="asr-bar-fill" id="asr-band-high" style="width:0%;background:var(--emerald);"></div></div>
+            <span id="asr-pct-high" style="font-size:12px;font-weight:700;color:var(--emerald);min-width:36px;text-align:right;">—</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="asr-pill medium">MED 0.5–0.74</span>
+            <div class="asr-bar-track"><div class="asr-bar-fill" id="asr-band-med" style="width:0%;background:var(--amber);"></div></div>
+            <span id="asr-pct-med" style="font-size:12px;font-weight:700;color:var(--amber);min-width:36px;text-align:right;">—</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="asr-pill low">LOW &lt; 0.50</span>
+            <div class="asr-bar-track"><div class="asr-bar-fill" id="asr-band-low" style="width:0%;background:var(--rose);"></div></div>
+            <span id="asr-pct-low" style="font-size:12px;font-weight:700;color:var(--rose);min-width:36px;text-align:right;">—</span>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--ink-100);"/>
+
+        <!-- Risk indicator -->
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:11px;font-weight:700;color:var(--ink-400);text-transform:uppercase;letter-spacing:0.08em;">Escalation Risk</div>
+          <div id="asr-risk-badge" style="font-size:13px;font-weight:600;padding:8px 14px;border-radius:var(--r8);background:var(--ink-50);border:1px solid var(--ink-200);color:var(--ink-400);">
+            No data
+          </div>
+        </div>
+
+        <!-- Threshold note -->
+        <div style="font-size:11.5px;color:var(--ink-300);line-height:1.6;background:var(--ink-50);border-radius:var(--r8);padding:10px 12px;border:1px solid var(--ink-100);">
+          ALVA escalates to a human agent after <strong style="color:var(--ink-800);">3 consecutive turns</strong> below the <strong style="color:var(--ink-800);">0.5</strong> threshold.
+          Scores are sent by the frontend as <code style="font-size:10px;background:var(--ink-200);padding:1px 4px;border-radius:3px;">__asr_confidence__:&lt;val&gt;:&lt;text&gt;</code>.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Recent turns table -->
+  <div class="sc">
+    <div class="sc-head">
+      <div class="sc-title-g">
+        <div class="sc-ico violet">📋</div>
+        <div><div class="sc-title">Recent ASR Turns</div><div class="sc-sub">Last 50 scored turns — newest first</div></div>
+      </div>
+    </div>
+    <div class="tbl-wrap" style="max-height:320px;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Session ID</th>
+            <th>Score</th>
+            <th>Band</th>
+            <th>Escalated?</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody id="asr-table-body">
+          <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--ink-300);">No ASR data yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       ASR LATENCY METRICS
+  ═══════════════════════════════════ -->
+  <div style="margin-top:8px;">
+    <div style="font-size:16px;font-weight:700;color:var(--ink-800);margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:20px;">⚡</span> ASR Latency Metrics
+    </div>
+  </div>
+
+  <!-- Latency KPI row -->
+  <div class="stats-row" style="grid-template-columns:repeat(5,1fr);">
+
+    <!-- Avg latency -->
+    <div class="stat-card s-cyan">
+      <div class="stat-top"><div class="stat-ico cyan">⏱️</div><div class="stat-trend">Response</div></div>
+      <div><div class="stat-num" id="lat-avg">—</div><div class="stat-lbl">Avg Latency (ms)</div></div>
+    </div>
+
+    <!-- Max latency -->
+    <div class="stat-card s-amber">
+      <div class="stat-top"><div class="stat-ico amber">📈</div><div class="stat-trend">Peak</div></div>
+      <div><div class="stat-num" id="lat-max">—</div><div class="stat-lbl">Max Latency (ms)</div></div>
+    </div>
+
+    <!-- Total measurements -->
+    <div class="stat-card s-violet">
+      <div class="stat-top"><div class="stat-ico violet">🔢</div><div class="stat-trend">Samples</div></div>
+      <div><div class="stat-num" id="lat-total">—</div><div class="stat-lbl">Total Measurements</div></div>
+    </div>
+
+    <!-- Under 500ms count -->
+    <div class="stat-card s-emerald">
+      <div class="stat-top"><div class="stat-ico green">✅</div><div class="stat-trend">Target</div></div>
+      <div><div class="stat-num" id="lat-under500">—</div><div class="stat-lbl">Under 500ms</div></div>
+    </div>
+
+    <!-- Under 500ms percentage -->
+    <div class="stat-card" style="border-left:3px solid var(--emerald);">
+      <div class="stat-top"><div class="stat-ico green">📊</div><div class="stat-trend">SLA</div></div>
+      <div><div class="stat-num" id="lat-pct500">—</div><div class="stat-lbl">% Under 500ms</div></div>
+    </div>
+
+  </div>
+
+  <!-- Latency chart + recent table -->
+  <div class="two-col">
+
+    <!-- Latency bar chart -->
+    <div class="sc">
+      <div class="sc-head">
+        <div class="sc-title-g">
+          <div class="sc-ico cyan">📊</div>
+          <div><div class="sc-title">Latency Distribution</div><div class="sc-sub">Last 20 measurements — green = under 500ms target</div></div>
+        </div>
+      </div>
+      <div style="padding:18px 22px;">
+        <div id="lat-chart-wrap" style="position:relative;height:140px;display:flex;align-items:flex-end;gap:3px;overflow-x:auto;">
+          <div style="text-align:center;padding:40px;color:var(--ink-300);font-size:13px;width:100%;">No latency data yet</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Latency health summary -->
+    <div class="sc">
+      <div class="sc-head">
+        <div class="sc-title-g">
+          <div class="sc-ico green">🎯</div>
+          <div><div class="sc-title">Performance Summary</div><div class="sc-sub">ASR response time health</div></div>
+        </div>
+      </div>
+      <div style="padding:22px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="asr-pill high">FAST &lt; 500ms</span>
+            <div class="asr-bar-track"><div class="asr-bar-fill" id="lat-band-fast" style="width:0%;background:var(--emerald);"></div></div>
+            <span id="lat-pct-fast" style="font-size:12px;font-weight:700;color:var(--emerald);min-width:36px;text-align:right;">—</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="asr-pill medium">OK 500–1500ms</span>
+            <div class="asr-bar-track"><div class="asr-bar-fill" id="lat-band-ok" style="width:0%;background:var(--amber);"></div></div>
+            <span id="lat-pct-ok" style="font-size:12px;font-weight:700;color:var(--amber);min-width:36px;text-align:right;">—</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="asr-pill low">SLOW &gt; 1500ms</span>
+            <div class="asr-bar-track"><div class="asr-bar-fill" id="lat-band-slow" style="width:0%;background:var(--rose);"></div></div>
+            <span id="lat-pct-slow" style="font-size:12px;font-weight:700;color:var(--rose);min-width:36px;text-align:right;">—</span>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--ink-100);"/>
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:11px;font-weight:700;color:var(--ink-400);text-transform:uppercase;letter-spacing:0.08em;">Latency Health</div>
+          <div id="lat-health-badge" style="font-size:13px;font-weight:600;padding:8px 14px;border-radius:var(--r8);background:var(--ink-50);border:1px solid var(--ink-200);color:var(--ink-400);">
+            No data
+          </div>
+        </div>
+
+        <div style="font-size:11.5px;color:var(--ink-300);line-height:1.6;background:var(--ink-50);border-radius:var(--r8);padding:10px 12px;border:1px solid var(--ink-100);">
+          Target: ASR response within <strong style="color:var(--ink-800);">&lt; 500ms</strong>.
+          End-to-end (speech-to-reply) target is <strong style="color:var(--ink-800);">&lt; 1500ms</strong>.
+          Measured as round-trip from frontend send to backend reply.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Recent latency table -->
+  <div class="sc">
+    <div class="sc-head">
+      <div class="sc-title-g">
+        <div class="sc-ico violet">📋</div>
+        <div><div class="sc-title">Recent Latency Measurements</div><div class="sc-sub">Last 20 measurements — newest first</div></div>
+      </div>
+    </div>
+    <div class="tbl-wrap" style="max-height:320px;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Session ID</th>
+            <th>Latency (ms)</th>
+            <th>Status</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody id="lat-table-body">
+          <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--ink-300);">No latency data yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+
+<!-- ══════════════════════════════════
+     HANDOFF STYLES
+══════════════════════════════════ -->
+<style>
+.ho-msg-row{display:flex;flex-direction:column;gap:3px;}
+.ho-msg-row.right{align-items:flex-end;}
+.ho-msg-row.center{align-items:center;}
+.ho-lbl{font-size:10px;font-weight:700;color:var(--ink-300);letter-spacing:0.07em;text-transform:uppercase;padding:0 4px;}
+.ho-bubble{padding:9px 14px;border-radius:12px;max-width:82%;font-size:13px;line-height:1.5;word-break:break-word;}
+.ho-bubble.patient{background:var(--ink-100);color:var(--ink-800);border-bottom-left-radius:3px;}
+.ho-bubble.doctor{background:linear-gradient(135deg,var(--cyan),#0e7490);color:#fff;border-bottom-right-radius:3px;box-shadow:0 3px 10px var(--cyan-glow);}
+.ho-bubble.system{background:var(--amber-dim);color:#92400e;border-radius:999px;font-size:11px;padding:4px 12px;font-weight:600;}
+#mic-btn.rec{background:linear-gradient(135deg,var(--rose),#f43f5e)!important;box-shadow:0 6px 24px rgba(225,29,72,0.45)!important;}
+#mic-ring.rec{animation:ring-expand 1s ease-out infinite;}
+@keyframes ring-expand{0%{transform:scale(1);opacity:0.7;}100%{transform:scale(1.6);opacity:0;}}
+</style>
+
+<div class="toast-layer" id="toastLayer"></div>
+
+
+<!-- ══════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ── API BASE ──
+   Dashboard is served on :9002 but FastAPI runs on :9001.
+   All fetch() calls must use this prefix to hit the correct server.
+*/
+const API_BASE = window.location.origin;
+
+/* ── STATE ── */
+let allAppointments = [];
+const todayStr = new Date().toISOString().slice(0, 10);
+
+/* ── BREADCRUMB LABELS ── */
+const PAGE_LABELS = {
+  dashboard: 'Dashboard', appointments: 'Appointments',
+  schedule: 'Schedule', calendar: 'Calendar',
+  reminders: 'Reminders', feedback: 'Feedback',
+  noshow: 'No-Show Management', handoff: 'Live Handoff',
+  asr: 'ASR Confidence'
+};
+
+/* ══════════════════════════════════════
+   NAVIGATION — sidebar tab switching
+══════════════════════════════════════ */
+function navigate(el) {
+  const pageId = el.dataset.page;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('breadcrumb').textContent = PAGE_LABELS[pageId] || pageId;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+}
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+
+  const now = new Date();
+
+  document.getElementById('todayLabel').textContent =
+    now.toLocaleDateString('en-IN', {
+      weekday:'long',
+      year:'numeric',
+      month:'long',
+      day:'numeric'
+    });
+
+  document.getElementById('schedDate').min = todayStr;
+
+  loadAppointments()
+  loadMetrics()   // ← ADD THIS
+  loadAsrMetrics()
+  setInterval(loadAsrMetrics, 15000) // auto-refresh every 15 s
+
+})
+
+/* ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ */
+function toast(icon, msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<span class="t-ico">${icon}</span><span>${msg}</span>`;
+  document.getElementById('toastLayer').appendChild(el);
+  setTimeout(() => el.remove(), 3800);
+}
+
+/* ══════════════════════════════════════
+   BADGE BUILDER
+══════════════════════════════════════ */
+function badge(state) {
+  const s = (state||'').toUpperCase();
+  const map = {
+    CONFIRMED:   ['badge-confirmed', 'Confirmed'],
+    CANCELLED:   ['badge-cancelled', 'Cancelled'],
+    PENDING:     ['badge-pending',   'Pending'],
+    RESCHEDULED:    ['badge-RESCHEDULED',  'RESCHEDULED'],
+    RESCHEDULED: ['badge-RESCHEDULED',  'Rescheduled'],
+    NO_SHOW:     ['badge-noshow',    'No-Show'],
+    NOSHOW:      ['badge-noshow',    'No-Show'],
+    COMPLETED:   ['badge-confirmed', 'Completed'],
+  };
+  const [cls, lbl] = map[s] || ['badge-pending', state||'Unknown'];
+  return `<span class="badge ${cls}">${lbl}</span>`;
+}
+
+/* ══════════════════════════════════════
+   XSS HELPERS
+══════════════════════════════════════ */
+const esc  = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const escA = s => String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+
+/* ══════════════════════════════════════
+   LOAD APPOINTMENTS  →  GET /doctor/appointments
+══════════════════════════════════════ */
+async function loadAppointments() {
+  const loadWrap  = document.getElementById('loadWrap');
+  const tableWrap = document.getElementById('tableWrap');
+  const refreshBtn= document.getElementById('refreshBtn');
+  const refreshIco= document.getElementById('refreshIco');
+
+  if(loadWrap)  loadWrap.classList.add('active');
+  if(tableWrap) tableWrap.style.display = 'none';
+  if(refreshBtn) refreshBtn.classList.add('spinning');
+  if(refreshIco) refreshIco.style.animation = 'spin 0.7s linear infinite';
+
+  try {
+    const res = await fetch(`${API_BASE}/doctor/appointments`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    allAppointments = Array.isArray(data) ? data : [];
+    updateStats(allAppointments);
+    renderTable(allAppointments);
+    renderReminderList(allAppointments);
+    renderFeedbackList(allAppointments);
+    renderNoshowList(allAppointments);
+    renderNoshowHistoryList(allAppointments);
+    loadAggregateFeedback();
+  } catch (err) {
+    console.error('[ALVA] Load failed:', err);
+    toast('❌', 'Failed to load appointments');
+    renderTable([]);
+  } finally {
+    if(loadWrap)  loadWrap.classList.remove('active');
+    if(tableWrap) tableWrap.style.display = '';
+    if(refreshBtn) refreshBtn.classList.remove('spinning');
+    if(refreshIco) refreshIco.style.animation = '';
+  }
+}
+
+/* ══════════════════════════════════════
+   UPDATE STATS
+══════════════════════════════════════ */
+function updateStats(data) {
+  let confirmed=0, cancelled=0, pending=0, noshow=0, rescheduled=0, today=0, completed=0;
+  data.forEach(a => {
+    const s=(a.state||'').toUpperCase();
+    if(s==='CONFIRMED') confirmed++;
+    else if(s==='CANCELLED') cancelled++;
+    else if(s==='NO_SHOW'||s==='NOSHOW') noshow++;
+    else if(s==='RESCHEDULED') rescheduled++;
+    else if(s==='COMPLETED') completed++;
+    else pending++;
+    if((a.date_time||'').startsWith(todayStr)) today++;
+  });
+  const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  set('stat-total',       data.length);
+  set('stat-confirmed',   confirmed);
+  set('stat-cancelled',   cancelled);
+  set('stat-today',       today);
+  set('stat-rescheduled', rescheduled);
+  set('stat-noshow',      noshow);
+  set('stat-completed',   completed);
+  const total = data.length || 1;
+  set('t-total',       data.length+' total');
+  set('t-confirmed',   Math.round(confirmed/total*100)+'%');
+  set('t-cancelled',   cancelled+' total');
+  set('t-rescheduled', rescheduled+' total');
+  set('t-noshow',      noshow+' total');
+}
+
+/* ══════════════════════════════════════
+   RENDER TABLE
+══════════════════════════════════════ */
+function renderTable(data) {
+  const tbody = document.getElementById('apptBody');
+  const empty = document.getElementById('emptyState');
+  tbody.innerHTML = '';
+  if(!data||data.length===0){ empty.classList.add('active'); return; }
+  empty.classList.remove('active');
+
+  data.forEach(a => {
+    const isToday = (a.date_time||'').startsWith(todayStr);
+    const tr = document.createElement('tr');
+    if(isToday) tr.classList.add('is-today');
+    let dt = a.date_time||'—';
+    try{ const d=new Date(a.date_time); if(!isNaN(d)) dt=d.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(_){}
+
+    const s = (a.state||'').toUpperCase();
+    const isActionable = s === 'CONFIRMED' || s === 'RESCHEDULED';
+
+    // Terminal state label shown instead of buttons for non-actionable rows
+    const stateLabel = () => {
+      if (s === 'CANCELLED')
+        return '<span style="font-size:10.5px;font-weight:600;color:#9f1239;background:rgba(225,29,72,0.09);border:1px solid rgba(225,29,72,0.18);padding:2px 8px;border-radius:999px;">Cancelled</span>';
+      if (s === 'COMPLETED')
+        return '<span style="font-size:10.5px;font-weight:600;color:#065f46;background:rgba(5,150,105,0.10);border:1px solid rgba(5,150,105,0.18);padding:2px 8px;border-radius:999px;">Completed</span>';
+      if (s === 'NO_SHOW' || s === 'NOSHOW')
+        return '<span style="font-size:10.5px;font-weight:600;color:#374151;background:rgba(107,114,128,0.10);border:1px solid rgba(107,114,128,0.2);padding:2px 8px;border-radius:999px;">No-Show</span>';
+      return '<span style="font-size:11.5px;color:#9ca3af;">—</span>';
+    };
+
+    // No-Show button: ONLY for CONFIRMED or RESCHEDULED
+    // CANCELLED / COMPLETED / NO_SHOW — show a coloured terminal-state label instead
+    const noShowCell = isActionable
+      ? `<button class="btn-act noshow" onclick="markNoShow(${a.id},'${escA(a.email)}','${escA(a.name)}',this)">🚫 No-Show</button>`
+      : stateLabel();
+
+    // TC082: Complete button — ONLY for CONFIRMED or RESCHEDULED
+    // CANCELLED / COMPLETED / NO_SHOW — show a coloured terminal-state label instead
+    const completeCell = isActionable
+      ? `<button class="btn-act" style="background:rgba(5,150,105,0.10);border-color:rgba(5,150,105,0.3);color:#059669;" onclick="markComplete(${a.id},'${escA(a.email)}','${escA(a.name)}',this)">✅ Complete</button>`
+      : stateLabel();
+
+    // TC084: show feedback score if available
+    const scoreCell = a.feedback_score
+      ? `<span style="font-size:12px;font-weight:600;color:var(--emerald);">${a.feedback_score}/5</span>${a.feedback_channel ? `<span style="font-size:10px;color:var(--ink-300);margin-left:4px;">(${a.feedback_channel})</span>` : ''}`
+      : `<span style="font-size:11.5px;color:var(--ink-300);">—</span>`;
+
+    tr.innerHTML = `
+      <td class="td-id">#${a.id}</td>
+      <td class="td-name">${esc(a.name||'—')}</td>
+      <td class="td-email">${esc(a.email||'—')}</td>
+      <td>${esc(a.service||'—')}</td>
+      <td class="td-dt">${dt}${isToday?'<span class="today-tag">Today</span>':''}</td>
+      <td>${badge(a.state)}</td>
+      <td>${scoreCell}</td>
+      <td><div class="act-cell">${completeCell}</div></td>
+      <td><div class="act-cell">${noShowCell}</div></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ══════════════════════════════════════
+   RENDER REMINDER LIST
+   Eligible: CONFIRMED, PENDING, RESCHEDULED
+══════════════════════════════════════ */
+function renderReminderList(data) {
+  const list = document.getElementById('reminderList');
+  if(!list) return;
+
+  const eligible = (data||[]).filter(a => {
+    const s = (a.state||'').toUpperCase();
+    return s === 'CONFIRMED' || s === 'PENDING' || s === 'RESCHEDULED';
+  });
+
+  if(eligible.length === 0){
+    list.innerHTML = `<div class="empty-wrap active">
+      <div class="ei">🔔</div>
+      <p>No eligible appointments for reminders<br>
+      <small style="font-size:11px;opacity:0.6">Reminders are sent to Confirmed, Pending &amp; RESCHEDULED patients</small></p>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = eligible.map(a => `
+    <div class="reminder-item">
+      <div class="ri-av">👤</div>
+      <div class="ri-info">
+        <div class="ri-name">${esc(a.name||'—')}</div>
+        <div class="ri-email">${esc(a.email||'—')} · ${badge(a.state)}</div>
+      </div>
+      <div class="ri-actions">
+        <button class="btn-act r" onclick="sendReminder(${a.id},'${escA(a.email)}')">🔔 Send Reminder</button>
+      </div>
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════
+   RENDER FEEDBACK LIST
+   Eligible: CONFIRMED, RESCHEDULED only
+══════════════════════════════════════ */
+function renderFeedbackList(data) {
+  const list = document.getElementById('feedbackList');
+  if(!list) return;
+
+  // TC086: Only CONFIRMED, RESCHEDULED, and COMPLETED are eligible for feedback
+  // CANCELLED appointments never receive feedback calls
+  const eligible = (data||[]).filter(a => {
+    const s = (a.state||'').toUpperCase();
+    return s === 'CONFIRMED' || s === 'RESCHEDULED' || s === 'COMPLETED';
+  });
+
+  if(eligible.length === 0){
+    list.innerHTML = `<div class="empty-wrap active">
+      <div class="ei">💬</div>
+      <p>No eligible appointments for feedback<br>
+      <small style="font-size:11px;opacity:0.6">Feedback is sent to Confirmed, Rescheduled &amp; Completed patients only</small></p>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = eligible.map(a => {
+    const hasScore = a.feedback_score != null;
+    const scoreTag = hasScore
+      ? `<span style="font-size:11px;font-weight:600;color:var(--emerald);margin-left:6px;">⭐ ${a.feedback_score}/5</span>`
+      : '';
+    return `
+    <div class="reminder-item">
+      <div class="ri-av">👤</div>
+      <div class="ri-info">
+        <div class="ri-name">${esc(a.name||'—')}${scoreTag}</div>
+        <div class="ri-email">${esc(a.email||'—')} · ${badge(a.state)}</div>
+      </div>
+      <div class="ri-actions">
+        <button class="btn-act f" onclick="sendFeedback(${a.id},'${escA(a.email)}','${escA(a.name)}')">⭐ Request Rating</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   SEARCH
+
+   
+══════════════════════════════════════ */
+function filterAppointments() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  renderTable(q ? allAppointments.filter(a =>
+    (a.name||'').toLowerCase().includes(q)||(a.email||'').toLowerCase().includes(q)
+  ) : allAppointments);
+}
+
+/* ══════════════════════════════════════
+   SEND REMINDER  →  POST /doctor/reminder
+══════════════════════════════════════ */
+async function sendReminder(id, email) {
+  try {
+    const res = await fetch(`${API_BASE}/doctor/reminder?id=${id}&email=${encodeURIComponent(email)}`, {method:'POST'});
+    if(!res.ok) throw new Error();
+    toast('🔔', `Reminder sent to ${email}`);
+  } catch { toast('❌','Failed to send reminder'); }
+}
+
+/* ══════════════════════════════════════
+   SEND FEEDBACK (post-appointment 1-5 rating prompt)
+   → POST /doctor/feedback (now sends mode=post_appointment)
+   Fix: was calling legacy feedback endpoint with wrong prompt.
+   Now passes name so ALVA greets patient properly.
+══════════════════════════════════════ */
+async function sendFeedback(id, email, name) {
+  try {
+    const n = name || '';
+    const res = await fetch(
+      `${API_BASE}/doctor/feedback?id=${id}&email=${encodeURIComponent(email)}&name=${encodeURIComponent(n)}`,
+      {method:'POST'}
+    );
+    if(!res.ok) throw new Error();
+    toast('⭐', `Rating request sent to ${email}`);
+  } catch { toast('❌','Failed to send feedback request'); }
+}
+
+/* ══════════════════════════════════════
+   SCHEDULE: status change
+══════════════════════════════════════ */
+function handleStatusChange() {
+  const isLeave = document.getElementById('schedStatus').value==='LEAVE';
+  ['schedStart','schedEnd'].forEach(id => {
+    const el=document.getElementById(id);
+    el.disabled=isLeave; if(isLeave) el.value='';
+  });
+  hideMsgs();
+}
+
+/* ══════════════════════════════════════
+   SCHEDULE: validate
+══════════════════════════════════════ */
+function validateSched() {
+  hideMsgs();
+  const date  = document.getElementById('schedDate').value;
+  const start = document.getElementById('schedStart').value;
+  const end   = document.getElementById('schedEnd').value;
+  const type  = document.getElementById('schedStatus').value;
+  if(date&&date<todayStr){ showErr('Cannot schedule for a past date.'); return false; }
+  if(type==='BUSY'&&start&&end&&start>=end){ showErr('End time must be after start time.'); return false; }
+  return true;
+}
+
+/* ══════════════════════════════════════
+   SCHEDULE: update  →  POST /doctor/availability
+══════════════════════════════════════ */
+async function updateAvailability() {
+  hideMsgs();
+  const date   = document.getElementById('schedDate').value;
+  let   start  = document.getElementById('schedStart').value;
+  let   end    = document.getElementById('schedEnd').value;
+  const status = document.getElementById('schedStatus').value;
+  if(!date){ showErr('Please select a date.'); return; }
+  if(status==='BUSY'&&(!start||!end)){ showErr('Please enter both start and end times.'); return; }
+  if(!validateSched()) return;
+  if(status==='LEAVE'){ start='00:00'; end='23:59'; }
+  try {
+    const res = await fetch(`${API_BASE}/doctor/availability?date=${date}&start_time=${start}&end_time=${end}&status=${status}`,{method:'POST'});
+    if(!res.ok) throw new Error();
+    showOk(); toast('🗓️','Doctor availability updated!');
+  } catch { showErr('Failed to update availability. Please try again.'); }
+}
+
+/* ══════════════════════════════════════
+   MARK COMPLETE (TC082, TC086)
+   → POST /doctor/complete
+   Marks appointment COMPLETED and triggers post-appointment flow.
+   CANCELLED appointments are blocked server-side.
+══════════════════════════════════════ */
+async function markComplete(id, email, name, btn) {
+  if (!confirm(`Mark "${name}" as Completed?\n\nALVA will place a post-appointment follow-up call to collect feedback and offer rebooking.`)) return;
+  btn.disabled    = true;
+  btn.textContent = '⏳ Processing…';
+  try {
+    const res = await fetch(
+      `${API_BASE}/doctor/complete?id=${id}&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`,
+      { method: 'POST' }
+    );
+    const data = await res.json();
+    if (data.error) {
+      toast('⚠️', data.error);
+      btn.disabled = false;
+      btn.textContent = '✅ Complete';
+      return;
+    }
+    toast('✅', `${name} marked Complete — ALVA follow-up call initiated`);
+    loadAppointments();
+    loadAggregateFeedback();
+  } catch {
+    toast('❌', 'Failed to mark as Complete');
+    btn.disabled    = false;
+    btn.textContent = '✅ Complete';
+  }
+}
+
+/* ══════════════════════════════════════
+   AGGREGATE SATISFACTION METRIC (TC087)
+   → GET /doctor/feedback/aggregate
+══════════════════════════════════════ */
+let _allFeedbackScores = [];
+
+async function loadAggregateFeedback() {
+  try {
+    const res = await fetch(`${API_BASE}/doctor/feedback/aggregate`);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    _allFeedbackScores = data.scores || [];
+
+    // Update average score display
+    const avgEl = document.getElementById('stat-avg-score');
+    if (avgEl) avgEl.textContent = data.average_score !== null ? data.average_score + ' / 5' : '—';
+
+    const totalEl = document.getElementById('stat-feedback-total');
+    if (totalEl) totalEl.textContent = data.total_responses + ' responses';
+
+    // Render trend chart in feedback page
+    renderFeedbackTrend(_allFeedbackScores);
+  } catch(err) {
+    console.log('Aggregate feedback error:', err);
+  }
+}
+
+/* ══════════════════════════════════════
+   TC087: Filter aggregate by service type
+══════════════════════════════════════ */
+function applyServiceFilter() {
+  const q = (document.getElementById('serviceFilter')?.value || '').toLowerCase().trim();
+  const filtered = q
+    ? _allFeedbackScores.filter(s => (s.service||'').toLowerCase().includes(q))
+    : _allFeedbackScores;
+
+  const avgEl = document.getElementById('stat-avg-score');
+  const totalEl = document.getElementById('stat-feedback-total');
+
+  if (filtered.length) {
+    const avg = filtered.reduce((acc, r) => acc + r.feedback_score, 0) / filtered.length;
+    if (avgEl) avgEl.textContent = avg.toFixed(1) + ' / 5';
+  } else {
+    if (avgEl) avgEl.textContent = '—';
+  }
+  if (totalEl) totalEl.textContent = filtered.length + ' responses';
+  renderFeedbackTrend(filtered);
+}
+
+/* ══════════════════════════════════════
+   RENDER FEEDBACK TREND CHART (TC087)
+   Simple inline bar chart per appointment
+══════════════════════════════════════ */
+function renderFeedbackTrend(scores) {
+  const container = document.getElementById('feedbackTrendChart');
+  if (!container) return;
+
+  if (!scores.length) {
+    container.innerHTML = `<div style="text-align:center;padding:24px;color:var(--ink-300);font-size:13px;">No feedback scores yet</div>`;
+    return;
+  }
+
+  const bars = scores.map(s => {
+    const pct = (s.feedback_score / 5) * 100;
+    let dt = s.feedback_timestamp || s.date_time || '';
+    try { const d = new Date(dt); if(!isNaN(d)) dt = d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}); } catch(_){}
+    const color = s.feedback_score >= 4 ? 'var(--emerald)' : s.feedback_score === 3 ? 'var(--amber)' : 'var(--rose)';
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:32px;max-width:60px;">
+      <span style="font-size:11px;font-weight:700;color:${color};">${s.feedback_score}</span>
+      <div style="width:100%;background:var(--ink-200);border-radius:4px;height:72px;display:flex;align-items:flex-end;overflow:hidden;">
+        <div style="width:100%;height:${pct}%;background:${color};border-radius:4px 4px 0 0;"></div>
+      </div>
+      <span style="font-size:9.5px;color:var(--ink-300);text-align:center;">${esc(dt)}</span>
+      <span style="font-size:9.5px;color:var(--ink-400);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;">${esc((s.service||'').slice(0,8))}</span>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `<div style="display:flex;gap:6px;align-items:flex-end;padding:4px 0;overflow-x:auto;">${bars}</div>`;
+}
+
+
+/* ══════════════════════════════════════
+   MARK NO-SHOW from Appointments table
+   → POST /doctor/noshow/mark  (DB only, no voice)
+══════════════════════════════════════ */
+async function markNoShow(id, email, name, btn) {
+  if (!confirm(`Mark "${name}" as No-Show?\n\nThe patient will appear in the No-Shows page where you can send them a voice follow-up.`)) return;
+  btn.disabled    = true;
+  btn.textContent = '⏳ Marking…';
+  try {
+    const res = await fetch(
+      `${API_BASE}/doctor/noshow/mark?id=${id}&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`,
+      { method: 'POST' }
+    );
+    if (!res.ok) throw new Error();
+    toast('🚫', `${name} marked as No-Show — go to No-Shows page to send voice`);
+    loadAppointments();
+  } catch {
+    toast('❌', 'Failed to mark No-Show');
+    btn.disabled    = false;
+    btn.textContent = '🚫 No-Show';
+  }
+}
+
+/* ══════════════════════════════════════
+   SEND NO-SHOW VOICE from No-Shows page
+   → POST /doctor/noshow  (voice only, already marked)
+══════════════════════════════════════ */
+async function sendNoshowVoice(id, email, name, btn) {
+  if (!confirm(`Send ALVA voice follow-up to ${name}?\n\nALVA will ask them why they missed their appointment and offer to rebook.`)) return;
+  btn.disabled    = true;
+  btn.textContent = '⏳ Calling…';
+  try {
+    const res = await fetch(
+      `${API_BASE}/doctor/noshow?id=${id}&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`,
+      { method: 'POST' }
+    );
+    if (!res.ok) throw new Error();
+    toast('📞', `ALVA is now calling ${name} — conversation started`);
+    setTimeout(() => { btn.disabled = false; btn.textContent = '🚫 Re-send Voice'; }, 4000);
+  } catch {
+    toast('❌', 'Failed to send No-Show voice');
+    btn.disabled    = false;
+    btn.textContent = '🚫 Send No-Show Voice';
+  }
+}
+
+/* ══════════════════════════════════════
+   RENDER NO-SHOW LIST (page-noshow)
+   Only NO_SHOW status — these get the voice button
+══════════════════════════════════════ */
+function renderNoshowList(data) {
+  const list = document.getElementById('noshowList');
+  if (!list) return;
+
+  const noshows = (data || []).filter(a => {
+    const s = (a.state || '').toUpperCase();
+    return s === 'NO_SHOW' || s === 'NOSHOW';
+  });
+
+  if (noshows.length === 0) {
+    list.innerHTML = `<div class="empty-wrap active">
+      <div class="ei">🚫</div>
+      <p>No no-show patients yet<br>
+      <small style="font-size:11px;opacity:0.6">Mark a patient as No-Show from the Appointments table first</small></p>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = noshows.map(a => {
+    let dt = a.date_time || '—';
+    try {
+      const d = new Date(a.date_time);
+      if (!isNaN(d)) dt = d.toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    } catch(_) {}
+    return `
+    <div class="reminder-item">
+      <div class="ri-av" style="background:rgba(225,29,72,0.08);border-color:rgba(225,29,72,0.2);">🚫</div>
+      <div class="ri-info">
+        <div class="ri-name">${esc(a.name||'—')}</div>
+        <div class="ri-email">
+          ${esc(a.email||'—')} · ${badge(a.state)}
+          <span style="font-size:11px;color:var(--ink-300);">· Missed: ${dt}</span>
+        </div>
+      </div>
+      <div class="ri-actions">
+        <button class="btn-act noshow"
+          onclick="sendNoshowVoice(${a.id},'${escA(a.email)}','${escA(a.name)}',this)">
+          🚫 Send No-Show Voice
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   RENDER NO-SHOW HISTORY LIST (page-noshow)
+   Shows all NO_SHOW patients with Send Reminder option
+══════════════════════════════════════ */
+function renderNoshowHistoryList(data) {
+  const list = document.getElementById('noshowHistoryList');
+  if (!list) return;
+
+  const noshows = (data || []).filter(a => {
+    const s = (a.state || '').toUpperCase();
+    return s === 'NO_SHOW' || s === 'NOSHOW';
+  });
+
+  if (noshows.length === 0) {
+    list.innerHTML = `<div class="empty-wrap active">
+      <div class="ei">📭</div><p>No no-show records yet</p>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = noshows.map(a => {
+    let dt = a.date_time || '—';
+    try {
+      const d = new Date(a.date_time);
+      if (!isNaN(d)) dt = d.toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    } catch(_) {}
+    return `
+    <div class="reminder-item">
+      <div class="ri-av" style="background:rgba(107,114,128,0.10);border-color:rgba(107,114,128,0.2);">🚫</div>
+      <div class="ri-info">
+        <div class="ri-name">${esc(a.name||'—')}</div>
+        <div class="ri-email">
+          ${esc(a.email||'—')} · ${badge(a.state)}
+          <span style="font-size:11px;color:var(--ink-300);">· Missed: ${dt}</span>
+        </div>
+      </div>
+      <div class="ri-actions" style="gap:6px;display:flex;">
+        <button class="btn-act noshow"
+          onclick="sendNoshowVoice(${a.id},'${escA(a.email)}','${escA(a.name)}',this)">
+          🚫 Re-send Voice
+        </button>
+        <button class="btn-act r"
+          onclick="sendReminder(${a.id},'${escA(a.email)}')">
+          🔔 Reminder
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadMetrics(){
+  try{
+    const res = await fetch(`${API_BASE}/metrics/asr-confidence`);
+    if (!res.ok) return;
+    const d = await res.json();
+    const lat = d.latency || {};
+    if (lat.recent && lat.recent.length) {
+      const sorted = lat.recent.map(e => e.latency_ms).sort((a,b) => a - b);
+      const p95Idx = Math.min(Math.floor(sorted.length * 0.95), sorted.length - 1);
+      const el = document.getElementById("stat-latency");
+      if (el) el.innerText = Math.round(sorted[p95Idx]);
+    }
+  }catch(err){
+    console.log("Metrics error",err);
+  }
+}
+/* ══════════════════════════════════════
+   MESSAGE HELPERS
+══════════════════════════════════════ */
+function showErr(msg){ document.getElementById('schedErrMsg').textContent=msg; document.getElementById('schedErr').classList.add('visible'); }
+function showOk(){ document.getElementById('schedOk').classList.add('visible'); setTimeout(()=>document.getElementById('schedOk').classList.remove('visible'),4500); }
+function hideMsgs(){ ['schedErr','schedOk'].forEach(id=>document.getElementById(id).classList.remove('visible')); }
+
+/* ══════════════════════════════════════
+   ASR CONFIDENCE  →  GET /metrics/asr-confidence
+══════════════════════════════════════ */
+let _asrHistory = [];
+
+async function loadAsrMetrics() {
+  try {
+    const res = await fetch(`${API_BASE}/metrics/asr-confidence`);
+    if (!res.ok) return;
+    const d = await res.json();
+    _asrHistory = (d.history || []).slice().reverse(); // newest first
+
+    // ── KPI cards ──────────────────────────────────────────────
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    const avg = d.average_score !== null ? d.average_score.toFixed(2) : '—';
+    set('asr-total-turns', d.total_turns ?? '—');
+    set('asr-low-count',   d.low_confidence_count ?? '—');
+    set('asr-esc-count',   d.escalated_count ?? '—');
+    set('asr-low-rate',    d.low_confidence_rate_pct !== null ? d.low_confidence_rate_pct + '% low' : '—');
+
+    // ── Gauge ───────────────────────────────────────────────────
+    const gaugeArc  = document.getElementById('asr-gauge-arc');
+    const gaugeText = document.getElementById('asr-gauge-text');
+    if (d.average_score !== null) {
+      const circumference = 226;
+      const offset = circumference - d.average_score * circumference;
+      gaugeArc.style.strokeDashoffset = offset;
+      gaugeArc.style.stroke = d.average_score >= 0.75 ? 'var(--emerald)' :
+                               d.average_score >= 0.5  ? 'var(--amber)'   : 'var(--rose)';
+      gaugeText.textContent = avg;
+    } else {
+      gaugeArc.style.strokeDashoffset = 226;
+      gaugeText.textContent = '—';
+    }
+
+    // ── Quality bands ───────────────────────────────────────────
+    const total = d.total_turns || 1;
+    const all   = d.history || [];
+    const highN = all.filter(e => e.score >= 0.75).length;
+    const medN  = all.filter(e => e.score >= 0.5 && e.score < 0.75).length;
+    const lowN  = all.filter(e => e.score < 0.5).length;
+    const pct   = n => total ? Math.round(n / total * 100) : 0;
+
+    const setBar = (barId, pctId, n) => {
+      const p = pct(n);
+      const bar = document.getElementById(barId);
+      if (bar) bar.style.width = p + '%';
+      const pctEl = document.getElementById(pctId);
+      if (pctEl) pctEl.textContent = p + '%';
+    };
+    setBar('asr-band-high', 'asr-pct-high', highN);
+    setBar('asr-band-med',  'asr-pct-med',  medN);
+    setBar('asr-band-low',  'asr-pct-low',  lowN);
+
+    // ── Risk badge ──────────────────────────────────────────────
+    const riskEl = document.getElementById('asr-risk-badge');
+    if (riskEl && d.total_turns > 0) {
+      const lowPct = d.low_confidence_rate_pct;
+      if (lowPct === null || d.total_turns === 0) {
+        riskEl.style.cssText = 'font-size:13px;font-weight:600;padding:8px 14px;border-radius:var(--r8);background:var(--ink-50);border:1px solid var(--ink-200);color:var(--ink-400);';
+        riskEl.textContent = 'No data';
+      } else if (lowPct >= 40) {
+        riskEl.style.cssText = 'font-size:13px;font-weight:600;padding:8px 14px;border-radius:var(--r8);background:var(--rose-dim);border:1px solid rgba(225,29,72,0.2);color:#9f1239;';
+        riskEl.textContent = '🔴 High Risk — ' + lowPct + '% of turns are low-confidence';
+      } else if (lowPct >= 20) {
+        riskEl.style.cssText = 'font-size:13px;font-weight:600;padding:8px 14px;border-radius:var(--r8);background:var(--amber-dim);border:1px solid rgba(217,119,6,0.2);color:#92400e;';
+        riskEl.textContent = '🟡 Moderate Risk — ' + lowPct + '% of turns are low-confidence';
+      } else {
+        riskEl.style.cssText = 'font-size:13px;font-weight:600;padding:8px 14px;border-radius:var(--r8);background:var(--emerald-dim);border:1px solid rgba(5,150,105,0.2);color:#065f46;';
+        riskEl.textContent = '🟢 Low Risk — ' + lowPct + '% of turns are low-confidence';
+      }
+    }
+
+    renderAsrChart();
+    renderAsrTable();
+
+    // ── Latency metrics ──────────────────────────────────────
+    const lat = d.latency || {};
+    set('lat-avg',      lat.average_ms !== null && lat.average_ms !== undefined ? Math.round(lat.average_ms) : '—');
+    set('lat-max',      lat.max_ms !== null && lat.max_ms !== undefined ? Math.round(lat.max_ms) : '—');
+    set('lat-total',    lat.total_measurements ?? '—');
+    set('lat-under500', lat.under_500ms_count ?? '—');
+    set('lat-pct500',   lat.under_500ms_pct !== null && lat.under_500ms_pct !== undefined ? lat.under_500ms_pct + '%' : '—');
+
+    // Dashboard P95 latency card (main dashboard page)
+    if (lat.recent && lat.recent.length) {
+      const sorted = lat.recent.map(e => e.latency_ms).sort((a,b) => a - b);
+      const p95Idx = Math.min(Math.floor(sorted.length * 0.95), sorted.length - 1);
+      set('stat-latency', Math.round(sorted[p95Idx]));
+    }
+
+    // Latency bands
+    const latRecent = (lat.recent || []);
+    const latTotal = latRecent.length || 1;
+    const fastN = latRecent.filter(e => e.latency_ms < 500).length;
+    const okN   = latRecent.filter(e => e.latency_ms >= 500 && e.latency_ms <= 1500).length;
+    const slowN = latRecent.filter(e => e.latency_ms > 1500).length;
+    const latPct = n => latTotal ? Math.round(n / latTotal * 100) : 0;
+
+    const setLatBar = (barId, pctId, n) => {
+      const p = latPct(n);
+      const bar = document.getElementById(barId);
+      if (bar) bar.style.width = p + '%';
+      const pctEl = document.getElementById(pctId);
+      if (pctEl) pctEl.textContent = p + '%';
+    };
+    setLatBar('lat-band-fast', 'lat-pct-fast', fastN);
+    setLatBar('lat-band-ok',   'lat-pct-ok',   okN);
+    setLatBar('lat-band-slow', 'lat-pct-slow', slowN);
+
+    // Latency health badge
+    const healthEl = document.getElementById('lat-health-badge');
+    if (healthEl && lat.total_measurements > 0) {
+      const pctFast = lat.under_500ms_pct;
+      if (pctFast >= 80) {
+        healthEl.style.cssText = 'font-size:13px;font-weight:600;padding:8px 14px;border-radius:var(--r8);background:var(--emerald-dim);border:1px solid rgba(5,150,105,0.2);color:#065f46;';
+        healthEl.textContent = '🟢 Excellent — ' + pctFast + '% of responses under 500ms';
+      } else if (pctFast >= 50) {
+        healthEl.style.cssText = 'font-size:13px;font-weight:600;padding:8px 14px;border-radius:var(--r8);background:var(--amber-dim);border:1px solid rgba(217,119,6,0.2);color:#92400e;';
+        healthEl.textContent = '🟡 Moderate — ' + pctFast + '% of responses under 500ms';
+      } else {
+        healthEl.style.cssText = 'font-size:13px;font-weight:600;padding:8px 14px;border-radius:var(--r8);background:var(--rose-dim);border:1px solid rgba(225,29,72,0.2);color:#9f1239;';
+        healthEl.textContent = '🔴 Slow — only ' + pctFast + '% of responses under 500ms';
+      }
+    }
+
+    renderLatChart(latRecent);
+    renderLatTable(latRecent);
+
+  } catch(err) {
+    console.error('[ALVA] ASR metrics error:', err);
+  }
+}
+
+/* ── ASR sparkline chart ── */
+function renderAsrChart() {
+  const wrap = document.getElementById('asr-chart-wrap');
+  if (!wrap) return;
+
+  const filter = (document.getElementById('asr-session-filter')?.value || '').toLowerCase().trim();
+  const data = filter
+    ? _asrHistory.filter(e => (e.session_id || '').toLowerCase().includes(filter))
+    : _asrHistory;
+
+  const last50 = data.slice(-50).reverse(); // chronological for chart
+
+  if (!last50.length) {
+    wrap.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink-300);font-size:13px;width:100%;">No ASR data yet</div>';
+    return;
+  }
+
+  const H = 120; // chart inner height px
+  const bars = last50.map((e, i) => {
+    const h = Math.round(e.score * H);
+    const color = e.score >= 0.75 ? 'var(--emerald)' :
+                  e.score >= 0.5  ? 'var(--amber)'   : 'var(--rose)';
+    const escMark = e.escalated ? '<div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:9px;">🆘</div>' : '';
+    return `<div style="position:relative;display:flex;flex-direction:column;align-items:center;flex:1;min-width:14px;max-width:28px;"
+                 title="Score: ${e.score} | Session: ${e.session_id} | ${e.ts}${e.escalated?' | Escalated':''}">
+      ${escMark}
+      <div style="width:100%;background:var(--ink-200);border-radius:3px 3px 0 0;height:${H}px;display:flex;align-items:flex-end;">
+        <div class="asr-spark-bar" style="width:100%;height:${h}px;background:${color};border-radius:3px 3px 0 0;"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // threshold line at 50%
+  const thresholdY = Math.round((1 - 0.5) * H);
+  wrap.innerHTML = `
+    <div style="position:relative;width:100%;height:${H}px;display:flex;align-items:flex-end;gap:3px;">
+      <div style="position:absolute;top:${thresholdY}px;left:0;right:0;border-top:1.5px dashed var(--rose);opacity:0.6;pointer-events:none;z-index:1;">
+        <span style="position:absolute;right:4px;top:-14px;font-size:9px;color:var(--rose);font-weight:700;">0.50</span>
+      </div>
+      ${bars}
+    </div>`;
+}
+
+/* ── UTC → IST timestamp formatter ── */
+function fmtTs(utcStr) {
+  if (!utcStr) return '—';
+  try {
+    const d = new Date(utcStr);
+    if (isNaN(d)) return utcStr.replace('T',' ').replace('Z','');
+    return d.toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: false
+    }).replace(/\//g, '-');
+  } catch(_) {
+    return utcStr.replace('T',' ').replace('Z','');
+  }
+}
+
+/* ── ASR recent turns table ── */
+function renderAsrTable() {
+  const tbody = document.getElementById('asr-table-body');
+  if (!tbody) return;
+  const rows = _asrHistory.slice(0, 50);
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--ink-300);">No ASR data yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map((e, i) => {
+    const band = e.score >= 0.75 ? '<span class="asr-pill high">HIGH</span>'
+               : e.score >= 0.5  ? '<span class="asr-pill medium">MED</span>'
+               :                   '<span class="asr-pill low">LOW</span>';
+    const escBadge = e.escalated
+      ? '<span style="font-size:11px;font-weight:700;color:var(--rose);">🆘 Yes</span>'
+      : '<span style="font-size:11px;color:var(--ink-300);">—</span>';
+    const scoreColor = e.score >= 0.75 ? 'var(--emerald)' : e.score >= 0.5 ? 'var(--amber)' : 'var(--rose)';
+    const ts = e.ts ? fmtTs(e.ts) : '—';
+    const sid = e.session_id || '—';
+    return `<tr>
+      <td class="td-id">${i+1}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11.5px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${sid}</td>
+      <td><span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:${scoreColor};">${e.score.toFixed(3)}</span></td>
+      <td>${band}</td>
+      <td>${escBadge}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11.5px;color:var(--ink-300);">${ts}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── Latency bar chart ── */
+function renderLatChart(entries) {
+  const wrap = document.getElementById('lat-chart-wrap');
+  if (!wrap) return;
+  const data = entries.slice().reverse();
+  if (!data.length) {
+    wrap.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink-300);font-size:13px;width:100%;">No latency data yet</div>';
+    return;
+  }
+  const maxMs = Math.max(...data.map(e => e.latency_ms), 500);
+  const H = 120;
+  const bars = data.map(e => {
+    const h = Math.max(4, Math.round((e.latency_ms / maxMs) * H));
+    const color = e.latency_ms < 500 ? 'var(--emerald)' :
+                  e.latency_ms <= 1500 ? 'var(--amber)' : 'var(--rose)';
+    return `<div style="position:relative;display:flex;flex-direction:column;align-items:center;flex:1;min-width:14px;max-width:28px;"
+                 title="${Math.round(e.latency_ms)}ms | ${e.session_id} | ${e.ts}">
+      <div style="width:100%;background:var(--ink-200);border-radius:3px 3px 0 0;height:${H}px;display:flex;align-items:flex-end;">
+        <div class="asr-spark-bar" style="width:100%;height:${h}px;background:${color};border-radius:3px 3px 0 0;"></div>
+      </div>
+    </div>`;
+  }).join('');
+  const targetY = Math.round((1 - 500 / maxMs) * H);
+  wrap.innerHTML = `
+    <div style="position:relative;width:100%;height:${H}px;display:flex;align-items:flex-end;gap:3px;">
+      <div style="position:absolute;top:${targetY}px;left:0;right:0;border-top:1.5px dashed var(--emerald);opacity:0.6;pointer-events:none;z-index:1;">
+        <span style="position:absolute;right:4px;top:-14px;font-size:9px;color:var(--emerald);font-weight:700;">500ms</span>
+      </div>
+      ${bars}
+    </div>`;
+}
+
+/* ── Latency recent table ── */
+function renderLatTable(entries) {
+  const tbody = document.getElementById('lat-table-body');
+  if (!tbody) return;
+  const rows = entries.slice().reverse();
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--ink-300);">No latency data yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map((e, i) => {
+    const ms = Math.round(e.latency_ms);
+    const color = ms < 500 ? 'var(--emerald)' : ms <= 1500 ? 'var(--amber)' : 'var(--rose)';
+    const pill = ms < 500
+      ? '<span class="asr-pill high">FAST</span>'
+      : ms <= 1500
+        ? '<span class="asr-pill medium">OK</span>'
+        : '<span class="asr-pill low">SLOW</span>';
+    const ts = e.ts ? fmtTs(e.ts) : '—';
+    const sid = e.session_id || '—';
+    return `<tr>
+      <td class="td-id">${i+1}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11.5px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${sid}</td>
+      <td><span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:${color};">${ms}ms</span></td>
+      <td>${pill}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11.5px;color:var(--ink-300);">${ts}</td>
+    </tr>`;
+  }).join('');
+}
+</script>
+
+<!-- ══════════════════════════════════
+     ESCALATION POPUP
+══════════════════════════════════ -->
+<div id="escalation-popup" style="display:none;position:fixed;inset:0;background:rgba(10,15,30,0.6);backdrop-filter:blur(5px);z-index:10000;align-items:center;justify-content:center;">
+  <div style="background:var(--white);border-radius:var(--r24);box-shadow:0 24px 64px rgba(0,0,0,0.22);padding:32px;width:100%;max-width:460px;margin:16px;animation:rise 0.3s cubic-bezier(0.16,1,0.3,1) both;">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:22px;">
+      <div style="width:50px;height:50px;border-radius:50%;background:var(--rose-dim);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;border:2px solid rgba(225,29,72,0.18);">🆘</div>
+      <div>
+        <div style="font-size:17px;font-weight:700;color:var(--ink-900);">Patient Requesting Human</div>
+        <div style="font-size:12px;color:var(--ink-400);margin-top:2px;">A patient wants to speak with you directly</div>
+      </div>
+    </div>
+    <div style="background:var(--ink-50);border:1px solid var(--ink-200);border-radius:var(--r12);padding:16px;margin-bottom:20px;display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:11px;font-weight:700;color:var(--ink-400);text-transform:uppercase;letter-spacing:0.08em;">Patient</span><span id="popup-name" style="font-size:13px;font-weight:600;color:var(--ink-900);">—</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:11px;font-weight:700;color:var(--ink-400);text-transform:uppercase;letter-spacing:0.08em;">Email</span><span id="popup-email" style="font-size:13px;color:var(--ink-600);">—</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:11px;font-weight:700;color:var(--ink-400);text-transform:uppercase;letter-spacing:0.08em;">Service</span><span id="popup-service" style="font-size:13px;color:var(--ink-600);">—</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:11px;font-weight:700;color:var(--ink-400);text-transform:uppercase;letter-spacing:0.08em;">Intent</span><span id="popup-intent" style="font-size:13px;color:var(--cyan);font-weight:600;">—</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:11px;font-weight:700;color:var(--ink-400);text-transform:uppercase;letter-spacing:0.08em;">Reason</span><span id="popup-reason" style="font-size:13px;color:var(--amber);font-weight:600;">—</span></div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary" style="flex:1;font-size:14px;" onclick="acceptHandoff()">🧑‍⚕️ Accept &amp; Connect</button>
+      <button class="btn btn-outline" onclick="dismissPopup()">Dismiss</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     HANDOFF JAVASCRIPT
+══════════════════════════════════ -->
+<script>
+(function(){
+'use strict';
+
+var WS  = location.protocol === 'https:' ? 'wss' : 'ws';
+var HOS = location.host;
+var dashWs = null;
+var agentWs = null;
+var activeRoomId = null;
+var pendingRoom = null;
+var pendingCtx  = null;
+
+/* ── Dashboard WS ── */
+function connectDashWs() {
+  dashWs = new WebSocket(WS + '://' + HOS + '/ws/dashboard');
+  dashWs.onmessage = function(e) {
+    try {
+      var m = JSON.parse(e.data);
+      if (m.type === 'escalation_alert') showPopup(m.room_id, m.context_packet);
+    } catch(_) {}
+  };
+  dashWs.onclose = function() { setTimeout(connectDashWs, 3000); };
+}
+connectDashWs();
+
+/* ── Escalation popup ── */
+function showPopup(roomId, ctx) {
+  pendingRoom = roomId;
+  pendingCtx  = ctx;
+  var s = ctx.appointment_details || {};
+  document.getElementById('popup-name').textContent    = s.name    || ctx.customer_name || '—';
+  document.getElementById('popup-email').textContent   = s.email   || '—';
+  document.getElementById('popup-service').textContent = s.service || '—';
+  document.getElementById('popup-intent').textContent  = ctx.detected_intent   || '—';
+  document.getElementById('popup-reason').textContent  = ctx.escalation_reason || '—';
+  document.getElementById('escalation-popup').style.display = 'flex';
+  var b = document.getElementById('handoff-badge');
+  if (b) b.style.display = 'inline-block';
+  try {
+    var ac = new AudioContext(), osc = ac.createOscillator(), g = ac.createGain();
+    osc.connect(g); g.connect(ac.destination);
+    osc.frequency.value = 880;
+    g.gain.setValueAtTime(0.25, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.55);
+    osc.start(); osc.stop(ac.currentTime + 0.55);
+  } catch(_) {}
+}
+
+window.dismissPopup = function() {
+  document.getElementById('escalation-popup').style.display = 'none';
+};
+
+window.acceptHandoff = function() {
+  dismissPopup();
+  /* Navigate to handoff page using the existing navigate() function */
+  var navEl = document.getElementById('nav-handoff');
+  if (navEl && typeof navigate === 'function') navigate(navEl);
+  openHandoffPanel(pendingRoom, pendingCtx);
+};
+
+/* ── Open handoff panel ── */
+function openHandoffPanel(roomId, ctx) {
+  activeRoomId = roomId;
+  var s = ctx.appointment_details || {};
+  document.getElementById('ho-name').textContent         = s.name    || ctx.customer_name || 'Unknown Patient';
+  document.getElementById('ho-email').textContent        = s.email   || '—';
+  document.getElementById('ho-service').textContent      = s.service || '—';
+  document.getElementById('ho-intent').textContent       = ctx.detected_intent    || '—';
+  document.getElementById('ho-appt-state').textContent   = ctx.appointment_state  || '—';
+  document.getElementById('ho-reason-badge').textContent = ctx.escalation_reason  || '—';
+
+  var tDiv = document.getElementById('ho-transcript');
+  var ph   = document.getElementById('ho-placeholder');
+  if (ph) ph.remove();
+  (ctx.conversation_transcript || []).forEach(function(m) {
+    addBubble(m.role === 'assistant' ? 'system' : 'patient', m.content || '', tDiv);
+  });
+
+  document.getElementById('ho-empty').style.display  = 'none';
+  document.getElementById('ho-panel').style.display  = 'flex';
+  var b = document.getElementById('handoff-badge');
+  if (b) b.style.display = 'none';
+
+  connectAgentWs(roomId);
+}
+
+function connectAgentWs(roomId) {
+  agentWs = new WebSocket(WS + '://' + HOS + '/ws/agent/' + roomId);
+  agentWs.onopen = function() {
+    addBubble('system', '✅ You are now connected to the patient.', document.getElementById('ho-transcript'));
+    setConn(true);
+  };
+  agentWs.onmessage = function(e) {
+    try {
+      var msg = JSON.parse(e.data);
+      if (msg.type !== 'handoff_message') return;
+      addBubble(msg.sender, msg.text, document.getElementById('ho-transcript'));
+      if (msg.sender === 'patient') speakToDoctor(msg.text);
+    } catch(_) {}
+  };
+  agentWs.onclose = function() {
+    addBubble('system', '🔌 Connection closed.', document.getElementById('ho-transcript'));
+    setConn(false);
+  };
+}
+
+function setConn(on) {
+  var el = document.getElementById('agent-conn-status');
+  if (!el) return;
+  el.style.background  = on ? 'var(--emerald-dim)' : 'var(--rose-dim)';
+  el.style.color       = on ? '#065f46' : '#9f1239';
+  el.style.borderColor = on ? 'rgba(5,150,105,0.2)' : 'rgba(225,29,72,0.2)';
+  el.textContent       = on ? '🟢 Connected to patient' : '🔴 Disconnected';
+}
+
+/* ── Add transcript bubble ── */
+function addBubble(sender, text, container) {
+  if (!text || !container) return;
+  var ph = document.getElementById('ho-placeholder');
+  if (ph) ph.remove();
+  var row = document.createElement('div');
+  row.className = 'ho-msg-row ' + (sender === 'doctor' ? 'right' : sender === 'system' ? 'center' : '');
+  if (sender !== 'system') {
+    var lbl = document.createElement('div');
+    lbl.className = 'ho-lbl';
+    lbl.textContent = sender === 'doctor' ? '🩺 Doctor (You)' : '🧑 Patient';
+    row.appendChild(lbl);
+  }
+  var bubble = document.createElement('div');
+  bubble.className = 'ho-bubble ' + sender;
+  bubble.textContent = text;
+  row.appendChild(bubble);
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
+}
+
+/* ── End handoff ── */
+window.endHandoff = function() {
+  if (!confirm('End this handoff session? The patient will return to ALVA.')) return;
+  if (agentWs && agentWs.readyState === WebSocket.OPEN) agentWs.send('__end_handoff__');
+  agentWs = null; activeRoomId = null;
+  document.getElementById('ho-panel').style.display = 'none';
+  document.getElementById('ho-empty').style.display = 'flex';
+  resetMic();
+};
+
+/* ── Send doctor text ── */
+window.sendDoctorText = function() {
+  var inp  = document.getElementById('doc-type-input');
+  var text = (inp.value || '').trim();
+  if (!text) return;
+  if (!agentWs || agentWs.readyState !== WebSocket.OPEN) { toast('⚠️', 'Not connected to patient yet'); return; }
+  agentWs.send(text);
+  addBubble('doctor', text, document.getElementById('ho-transcript'));
+  inp.value = '';
+};
+
+/* ── Doctor mic hold-to-talk ── */
+var doctorRec = null;
+var micOn     = false;
+
+window.startDoctorSpeech = function() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { document.getElementById('mic-status').textContent = '⚠️ Not supported. Use the text box below.'; return; }
+  if (micOn) return;
+  if (!agentWs || agentWs.readyState !== WebSocket.OPEN) { toast('⚠️', 'Not connected to patient yet'); return; }
+  micOn = true;
+  var btn = document.getElementById('mic-btn'), ring = document.getElementById('mic-ring');
+  btn.classList.add('rec'); btn.textContent = '⏺️';
+  if (ring) ring.classList.add('rec');
+  document.getElementById('mic-status').textContent  = '🔴 Recording… release to send';
+  document.getElementById('mic-preview').textContent = '…';
+  document.getElementById('mic-preview').style.color = 'var(--ink-800)';
+  document.getElementById('mic-preview').style.fontStyle = 'normal';
+  var lastFinal = '';
+  doctorRec = new SR();
+  doctorRec.continuous = false; doctorRec.interimResults = true; doctorRec.lang = 'en-IN';
+  doctorRec.onresult = function(e) {
+    var interim = '', fin = '';
+    for (var i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) fin += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    if (fin) lastFinal = fin;
+    document.getElementById('mic-preview').textContent = fin || interim || '…';
+  };
+  doctorRec.onerror = function(e) {
+    document.getElementById('mic-status').textContent = '⚠️ Mic error: ' + e.error;
+    resetMic();
+  };
+  doctorRec.onend = function() {
+    var spoken = (lastFinal || document.getElementById('mic-preview').textContent).trim();
+    if (spoken && spoken !== '…' && spoken !== '—' && agentWs && agentWs.readyState === WebSocket.OPEN) {
+      agentWs.send(spoken);
+      addBubble('doctor', spoken, document.getElementById('ho-transcript'));
+    }
+    lastFinal = '';
+    resetMic();
+  };
+  doctorRec.start();
+};
+
+window.stopDoctorSpeech = function() {
+  if (doctorRec) { try { doctorRec.stop(); } catch(_) {} }
+};
+
+function resetMic() {
+  micOn = false;
+  var btn = document.getElementById('mic-btn'), ring = document.getElementById('mic-ring');
+  if (!btn) return;
+  btn.classList.remove('rec'); btn.textContent = '🎙️';
+  if (ring) ring.classList.remove('rec');
+  document.getElementById('mic-status').textContent  = 'Hold button to speak to patient';
+  document.getElementById('mic-preview').textContent = '—';
+  document.getElementById('mic-preview').style.color = 'var(--ink-400)';
+  document.getElementById('mic-preview').style.fontStyle = 'italic';
+  doctorRec = null;
+}
+
+/* ── TTS: patient voice spoken to doctor ── */
+function speakToDoctor(text) {
+  if (!text || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  var utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'en-IN'; utt.rate = 1.0; utt.pitch = 1.0;
+  var voices = window.speechSynthesis.getVoices();
+  var pick = voices.find(function(v){ return v.lang.startsWith('en'); });
+  if (pick) utt.voice = pick;
+  window.speechSynthesis.speak(utt);
+}
+if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
+  window.speechSynthesis.onvoiceschanged = function() { window.speechSynthesis.getVoices(); };
+}
+
+})();
+</script>
+
+</body>
+</html>

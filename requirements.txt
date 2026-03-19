@@ -1,0 +1,15 @@
+
+fastapi
+uvicorn
+redis
+mysql-connector-python
+python-dotenv
+requests
+elevenlabs
+groq
+dateparser
+
+
+google-api-python-client 
+google-auth 
+google-auth-oauthlib

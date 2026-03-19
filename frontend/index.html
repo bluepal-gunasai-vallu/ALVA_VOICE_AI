@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ALVA · Voice Appointment Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+
+<style>
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root {
+  /* Palette — light theme */
+  --bg:           #f0f4f8;
+  --bg-deep:      #e3eaf3;
+  --surface:      rgba(255,255,255,0.72);
+  --surface-solid:#ffffff;
+  --surface-2:    rgba(255,255,255,0.5);
+  --border:       rgba(0,0,0,0.07);
+  --border-strong:rgba(0,0,0,0.13);
+
+  --teal:         #0d9488;
+  --teal-light:   #14b8a6;
+  --teal-dim:     rgba(13,148,136,0.12);
+  --teal-glow:    rgba(13,148,136,0.28);
+  --coral:        #f26b4e;
+  --coral-dim:    rgba(242,107,78,0.12);
+  --amber:        #f59e0b;
+  --violet:       #7c3aed;
+  --violet-dim:   rgba(124,58,237,0.12);
+  --green:        #10b981;
+  --green-dim:    rgba(16,185,129,0.12);
+  --red:          #ef4444;
+  --red-dim:      rgba(239,68,68,0.1);
+
+  --text-1:       #0f1923;
+  --text-2:       #4a5568;
+  --text-3:       #8fa3b8;
+  --text-inv:     #ffffff;
+
+  /* Geometry */
+  --r-sm:  8px;
+  --r-md:  14px;
+  --r-lg:  22px;
+  --r-xl:  32px;
+  --r-full:999px;
+
+  /* Shadows */
+  --sh-sm:  0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+  --sh-md:  0 4px 20px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.04);
+  --sh-lg:  0 12px 48px rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.04);
+  --sh-xl:  0 24px 80px rgba(0,0,0,0.18);
+  --sh-teal:0 8px 32px rgba(13,148,136,0.32);
+
+  /* Motion */
+  --ease:    cubic-bezier(0.16,1,0.3,1);
+  --ease-in: cubic-bezier(0.4,0,1,1);
+  --t-fast:  0.15s;
+  --t-base:  0.28s;
+  --t-slow:  0.5s;
+}
+
+[data-theme="dark"] {
+  --bg:           #080d13;
+  --bg-deep:      #050810;
+  --surface:      rgba(16,24,36,0.85);
+  --surface-solid:#101824;
+  --surface-2:    rgba(20,30,48,0.6);
+  --border:       rgba(255,255,255,0.06);
+  --border-strong:rgba(255,255,255,0.12);
+  --teal-dim:     rgba(20,184,166,0.15);
+  --teal-glow:    rgba(20,184,166,0.35);
+  --coral-dim:    rgba(242,107,78,0.15);
+  --violet-dim:   rgba(167,139,250,0.15);
+  --green-dim:    rgba(52,211,153,0.15);
+  --red-dim:      rgba(248,113,113,0.12);
+  --text-1:       #e8f0f8;
+  --text-2:       #94a8c0;
+  --text-3:       #4a6282;
+  --sh-sm:  0 1px 4px rgba(0,0,0,0.4);
+  --sh-md:  0 4px 20px rgba(0,0,0,0.45);
+  --sh-lg:  0 12px 48px rgba(0,0,0,0.55);
+  --sh-xl:  0 24px 80px rgba(0,0,0,0.7);
+}
+
+/* ============================================================
+   RESET
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+button { font-family: inherit; cursor: pointer; }
+input  { font-family: inherit; }
+
+/* ============================================================
+   GLOBAL PAGE
+   ============================================================ */
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text-1);
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 20px 16px 40px;
+  overflow-x: hidden;
+  transition: background var(--t-slow) var(--ease), color var(--t-slow) var(--ease);
+  position: relative;
+}
+
+/* Layered background */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 55% at 15% 5%,  rgba(13,148,136,0.09) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 45% at 88% 92%, rgba(242,107,78,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 40% at 78% 18%, rgba(124,58,237,0.05) 0%, transparent 55%);
+  animation: bg-breathe 20s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes bg-breathe {
+  0%   { opacity: 1; transform: scale(1);    }
+  100% { opacity: 0.7; transform: scale(1.04); }
+}
+
+/* Fine grain noise overlay */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* ============================================================
+   APP SHELL
+   ============================================================ */
+.app {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 860px;
+  display: flex; flex-direction: column; gap: 14px;
+  animation: shell-rise 0.7s var(--ease) both;
+}
+@keyframes shell-rise {
+  from { opacity: 0; transform: translateY(36px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* ============================================================
+   TOPBAR
+   ============================================================ */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2px;
+}
+
+.logo {
+  display: flex; align-items: center; gap: 11px;
+}
+
+.logo-mark {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: linear-gradient(145deg, var(--teal), #0f766e);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--sh-teal);
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.logo-mark::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 60%);
+}
+.logo-mark svg { width: 20px; height: 20px; color: white; position: relative; z-index: 1; }
+
+.logo-text { display: flex; flex-direction: column; gap: 1px; }
+.logo-name {
+  font-size: 16px; font-weight: 700; letter-spacing: -0.03em;
+  color: var(--text-1); line-height: 1;
+}
+.logo-tag {
+  font-size: 10px; font-weight: 500; color: var(--text-3);
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+
+.tb-btn {
+  height: 36px; padding: 0 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 12px; font-weight: 600;
+  display: flex; align-items: center; gap: 6px;
+  backdrop-filter: blur(12px);
+  transition: all var(--t-fast) var(--ease);
+  box-shadow: var(--sh-sm);
+  white-space: nowrap;
+}
+.tb-btn:hover {
+  background: var(--surface-solid);
+  color: var(--text-1);
+  border-color: var(--border-strong);
+  box-shadow: var(--sh-md);
+  transform: translateY(-1px);
+}
+.tb-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* ============================================================
+   MAIN CARD
+   ============================================================ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-xl);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================
+   VOICE PANEL (top section with orb)
+   ============================================================ */
+.voice-panel {
+  padding: 36px 36px 28px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 28px;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(13,148,136,0.04) 0%, transparent 100%);
+  position: relative;
+}
+
+/* Subtle dividing line decoration */
+.voice-panel::after {
+  content: '';
+  position: absolute; bottom: -1px; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--teal-light), transparent);
+  opacity: 0.4;
+}
+
+/* ──── ORB ──── */
+.orb-stage {
+  position: relative;
+  width: 96px; height: 96px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Halo rings */
+.halo {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  pointer-events: none;
+}
+
+/* Listening rings */
+.orb-stage.mode-listening .halo-1 { animation: halo-pulse 2.4s var(--ease) 0.0s infinite; border-color: var(--teal-light); }
+.orb-stage.mode-listening .halo-2 { animation: halo-pulse 2.4s var(--ease) 0.6s infinite; border-color: var(--teal-light); }
+.orb-stage.mode-listening .halo-3 { animation: halo-pulse 2.4s var(--ease) 1.2s infinite; border-color: var(--teal-light); }
+/* Speaking rings */
+.orb-stage.mode-speaking .halo-1 { animation: halo-pulse 1.6s var(--ease) 0.0s  infinite; border-color: var(--coral); }
+.orb-stage.mode-speaking .halo-2 { animation: halo-pulse 1.6s var(--ease) 0.4s  infinite; border-color: var(--coral); }
+.orb-stage.mode-speaking .halo-3 { animation: halo-pulse 1.6s var(--ease) 0.8s  infinite; border-color: var(--coral); }
+
+@keyframes halo-pulse {
+  0%   { transform: scale(0.92); opacity: 0.7; }
+  100% { transform: scale(2.6);  opacity: 0; }
+}
+
+/* The orb itself */
+.orb {
+  width: 72px; height: 72px; border-radius: 50%;
+  position: relative; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-solid);
+  border: 2px solid var(--border);
+  box-shadow: var(--sh-md);
+  transition: all 0.5s var(--ease);
+  cursor: pointer;
+  overflow: hidden;
+}
+.orb::before {
+  content: '';
+  position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.1) 60deg, transparent 120deg);
+  animation: orb-sheen 4s linear infinite;
+}
+@keyframes orb-sheen { to { transform: rotate(360deg); } }
+
+/* Mode states */
+.orb-stage.mode-listening .orb {
+  background: linear-gradient(145deg, #0d9488, #0f766e);
+  border-color: #14b8a6;
+  box-shadow: var(--sh-teal), 0 0 0 6px var(--teal-dim);
+  animation: orb-breathe 2s ease-in-out infinite;
+}
+.orb-stage.mode-speaking .orb {
+  background: linear-gradient(145deg, #e8613b, #f26b4e);
+  border-color: #fb8c6a;
+  box-shadow: 0 8px 32px rgba(242,107,78,0.4), 0 0 0 6px var(--coral-dim);
+}
+.orb-stage.mode-processing .orb {
+  background: linear-gradient(145deg, #6d28d9, #7c3aed);
+  border-color: #a78bfa;
+  box-shadow: 0 8px 32px rgba(124,58,237,0.4), 0 0 0 6px var(--violet-dim);
+  animation: orb-spin-glow 1.4s ease-in-out infinite;
+}
+.orb-stage.mode-ended .orb {
+  background: linear-gradient(145deg, #374151, #4b5563);
+  border-color: #6b7280;
+  box-shadow: none;
+}
+
+@keyframes orb-breathe {
+  0%,100% { box-shadow: var(--sh-teal), 0 0 0 6px var(--teal-dim); transform: scale(1); }
+  50%      { box-shadow: 0 12px 40px rgba(13,148,136,0.5), 0 0 0 10px rgba(13,148,136,0.08); transform: scale(1.04); }
+}
+@keyframes orb-spin-glow {
+  0%,100% { box-shadow: 0 8px 32px rgba(124,58,237,0.4), 0 0 0 6px var(--violet-dim); }
+  50%      { box-shadow: 0 12px 48px rgba(124,58,237,0.6), 0 0 0 12px rgba(124,58,237,0.08); }
+}
+
+/* Icons inside orb */
+.orb-icon {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+}
+.orb-icon svg { width: 26px; height: 26px; transition: color var(--t-base) var(--ease); }
+.orb-stage:not(.mode-listening):not(.mode-speaking):not(.mode-processing):not(.mode-ended) .orb-icon svg { color: var(--text-2); }
+.orb-stage.mode-listening .orb-icon svg,
+.orb-stage.mode-speaking  .orb-icon svg,
+.orb-stage.mode-processing .orb-icon svg,
+.orb-stage.mode-ended .orb-icon svg { color: white; }
+
+/* Wave bars (visible while speaking) */
+.orb-waves {
+  position: absolute; inset: 0; border-radius: 50%;
+  display: none; align-items: center; justify-content: center; gap: 4px;
+  z-index: 3;
+}
+.orb-stage.mode-speaking .orb-waves { display: flex; }
+.orb-stage.mode-speaking .orb-icon  { display: none; }
+
+.ow { width: 4px; border-radius: 2px; background: white; height: 6px; }
+.orb-stage.mode-speaking .ow:nth-child(1) { animation: spk-w 0.7s ease-in-out 0.00s infinite; }
+.orb-stage.mode-speaking .ow:nth-child(2) { animation: spk-w 0.7s ease-in-out 0.12s infinite; }
+.orb-stage.mode-speaking .ow:nth-child(3) { animation: spk-w 0.7s ease-in-out 0.24s infinite; }
+.orb-stage.mode-speaking .ow:nth-child(4) { animation: spk-w 0.7s ease-in-out 0.12s infinite; }
+.orb-stage.mode-speaking .ow:nth-child(5) { animation: spk-w 0.7s ease-in-out 0.00s infinite; }
+@keyframes spk-w { 0%,100%{height:5px;} 50%{height:28px;} }
+
+/* Processing spinner */
+.orb-spinner {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: rgba(255,255,255,0.6);
+  display: none;
+  animation: spin 0.9s linear infinite;
+  z-index: 3;
+}
+.orb-stage.mode-processing .orb-spinner { display: block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ──── CENTER INFO ──── */
+.vp-info { min-width: 0; }
+
+.vp-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 26px; font-weight: 400;
+  color: var(--text-1);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.vp-title em { font-style: italic; color: var(--teal); }
+
+.vp-sub {
+  font-size: 13px; color: var(--text-3);
+  margin-top: 4px; font-weight: 400;
+}
+
+/* Status chip */
+.status-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  margin-top: 12px;
+  padding: 5px 12px 5px 9px;
+  border-radius: var(--r-full);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  font-family: 'Fira Code', monospace;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  transition: all var(--t-base) var(--ease);
+  backdrop-filter: blur(8px);
+}
+.chip-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text-3);
+  flex-shrink: 0;
+  transition: background var(--t-base) var(--ease);
+}
+
+/* States */
+.status-chip.s-listening  { background: var(--teal-dim);  border-color: rgba(13,148,136,0.25); color: var(--teal); }
+.status-chip.s-listening .chip-dot  { background: var(--teal); animation: chip-blink 1s infinite; }
+.status-chip.s-processing { background: var(--violet-dim); border-color: rgba(124,58,237,0.25); color: var(--violet); }
+.status-chip.s-processing .chip-dot { background: var(--violet); animation: chip-blink 0.5s infinite; }
+.status-chip.s-speaking   { background: var(--coral-dim); border-color: rgba(242,107,78,0.25); color: var(--coral); }
+.status-chip.s-speaking .chip-dot   { background: var(--coral); animation: chip-blink 0.45s infinite; }
+.status-chip.s-ended      { background: var(--red-dim);   border-color: rgba(239,68,68,0.2);   color: var(--red); }
+.status-chip.s-ended .chip-dot      { background: var(--red); }
+@keyframes chip-blink { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+
+/* ──── RIGHT: waveform bars ──── */
+.vp-wave {
+  display: flex; align-items: center; gap: 4px;
+  height: 40px; flex-shrink: 0;
+}
+.vw-bar {
+  width: 4px; border-radius: 2px;
+  height: 6px;
+  background: var(--border-strong);
+  transition: background var(--t-base) var(--ease);
+}
+.vp-wave.w-listening .vw-bar  { background: var(--teal); }
+.vp-wave.w-speaking  .vw-bar  { background: var(--coral); }
+
+.vp-wave.w-listening .vw-bar:nth-child(1) { animation: vbar 0.85s ease-in-out 0.00s infinite; }
+.vp-wave.w-listening .vw-bar:nth-child(2) { animation: vbar 0.85s ease-in-out 0.12s infinite; }
+.vp-wave.w-listening .vw-bar:nth-child(3) { animation: vbar 0.85s ease-in-out 0.24s infinite; }
+.vp-wave.w-listening .vw-bar:nth-child(4) { animation: vbar 0.85s ease-in-out 0.36s infinite; }
+.vp-wave.w-listening .vw-bar:nth-child(5) { animation: vbar 0.85s ease-in-out 0.24s infinite; }
+.vp-wave.w-listening .vw-bar:nth-child(6) { animation: vbar 0.85s ease-in-out 0.12s infinite; }
+.vp-wave.w-listening .vw-bar:nth-child(7) { animation: vbar 0.85s ease-in-out 0.00s infinite; }
+.vp-wave.w-listening .vw-bar:nth-child(8) { animation: vbar 0.85s ease-in-out 0.12s infinite; }
+.vp-wave.w-listening .vw-bar:nth-child(9) { animation: vbar 0.85s ease-in-out 0.24s infinite; }
+
+.vp-wave.w-speaking .vw-bar:nth-child(1) { animation: vbar 0.5s ease-in-out 0.00s infinite; }
+.vp-wave.w-speaking .vw-bar:nth-child(2) { animation: vbar 0.5s ease-in-out 0.06s infinite; }
+.vp-wave.w-speaking .vw-bar:nth-child(3) { animation: vbar 0.5s ease-in-out 0.12s infinite; }
+.vp-wave.w-speaking .vw-bar:nth-child(4) { animation: vbar 0.5s ease-in-out 0.18s infinite; }
+.vp-wave.w-speaking .vw-bar:nth-child(5) { animation: vbar 0.5s ease-in-out 0.24s infinite; }
+.vp-wave.w-speaking .vw-bar:nth-child(6) { animation: vbar 0.5s ease-in-out 0.18s infinite; }
+.vp-wave.w-speaking .vw-bar:nth-child(7) { animation: vbar 0.5s ease-in-out 0.12s infinite; }
+.vp-wave.w-speaking .vw-bar:nth-child(8) { animation: vbar 0.5s ease-in-out 0.06s infinite; }
+.vp-wave.w-speaking .vw-bar:nth-child(9) { animation: vbar 0.5s ease-in-out 0.00s infinite; }
+
+@keyframes vbar { 0%,100%{height:5px;} 50%{height:34px;} }
+
+/* ============================================================
+   CHAT AREA
+   ============================================================ */
+.chat {
+  flex: 1;
+  min-height: 340px; max-height: 420px;
+  overflow-y: auto;
+  padding: 28px 28px 12px;
+  display: flex; flex-direction: column; gap: 18px;
+  scroll-behavior: smooth;
+}
+.chat::-webkit-scrollbar { width: 5px; }
+.chat::-webkit-scrollbar-track { background: transparent; }
+.chat::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+.chat::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+/* Empty state */
+.empty-state {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px;
+  padding: 60px 32px; text-align: center;
+  animation: fade-up 0.5s var(--ease) both;
+}
+.empty-icon {
+  width: 64px; height: 64px; border-radius: 20px;
+  background: var(--teal-dim);
+  border: 1px solid rgba(13,148,136,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  animation: icon-float 4s ease-in-out infinite;
+}
+@keyframes icon-float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+.empty-state h3 { font-size: 17px; font-weight: 600; color: var(--text-1); }
+.empty-state p  { font-size: 13px; color: var(--text-3); max-width: 260px; line-height: 1.55; }
+
+/* Message row */
+.msg-row {
+  display: flex; gap: 11px; align-items: flex-end;
+  animation: msg-slide 0.3s var(--ease) both;
+}
+@keyframes msg-slide {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+.msg-row.from-user { flex-direction: row-reverse; }
+
+/* Avatar */
+.av {
+  width: 32px; height: 32px; border-radius: 50%;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  border: 1.5px solid var(--border);
+  background: var(--surface-solid);
+  box-shadow: var(--sh-sm);
+}
+.msg-row.from-user .av {
+  background: linear-gradient(145deg, #1e3a5f, #1a2f52);
+  border-color: rgba(56,189,248,0.25);
+}
+.msg-row.from-ai .av {
+  background: linear-gradient(145deg, var(--teal), #0f766e);
+  border-color: rgba(20,184,166,0.3);
+}
+
+/* Bubble group */
+.msg-group { display: flex; flex-direction: column; gap: 4px; max-width: 75%; }
+.msg-row.from-user .msg-group { align-items: flex-end; }
+.msg-row.from-ai   .msg-group { align-items: flex-start; }
+
+.bubble {
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px; line-height: 1.62;
+  font-weight: 400; word-break: break-word;
+  position: relative;
+  box-shadow: var(--sh-sm);
+}
+.msg-row.from-user .bubble {
+  background: linear-gradient(145deg, #1e3a5f 0%, #1c3353 100%);
+  color: #dbeafe;
+  border-bottom-right-radius: 4px;
+  border: 1px solid rgba(59,130,246,0.2);
+}
+.msg-row.from-ai .bubble {
+  background: var(--surface-solid);
+  color: var(--text-1);
+  border-bottom-left-radius: 4px;
+  border: 1px solid var(--border);
+}
+[data-theme="dark"] .msg-row.from-ai .bubble {
+  background: rgba(20,30,48,0.9);
+}
+
+.msg-meta {
+  font-size: 10px; color: var(--text-3);
+  font-family: 'Fira Code', monospace;
+  padding: 0 4px;
+  display: flex; align-items: center; gap: 5px;
+}
+
+/* Typing indicator */
+.typing-row {
+  display: flex; gap: 11px; align-items: flex-end;
+  animation: msg-slide 0.3s var(--ease) both;
+}
+.typing-bubble {
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  border-bottom-left-radius: 4px;
+  padding: 14px 18px;
+  display: flex; align-items: center; gap: 6px;
+  box-shadow: var(--sh-sm);
+}
+.td { width: 8px; height: 8px; border-radius: 50%; background: var(--teal-light); }
+.td:nth-child(1) { animation: tdot 1.3s ease-in-out 0.0s infinite; }
+.td:nth-child(2) { animation: tdot 1.3s ease-in-out 0.2s infinite; }
+.td:nth-child(3) { animation: tdot 1.3s ease-in-out 0.4s infinite; }
+@keyframes tdot { 0%,70%,100%{transform:scale(0.65);opacity:0.35;} 35%{transform:scale(1.1);opacity:1;} }
+
+/* ============================================================
+   CONTROL PANEL
+   ============================================================ */
+.control-panel {
+  border-top: 1px solid var(--border);
+  padding: 20px 28px 24px;
+  display: flex; flex-direction: column; gap: 16px;
+  background: linear-gradient(0deg, rgba(13,148,136,0.025) 0%, transparent 100%);
+}
+
+/* Mic row */
+.mic-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: 24px;
+}
+
+.mic-stage {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Pulsing mic button */
+.mic-btn {
+  width: 72px; height: 72px; border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  background: var(--surface-solid);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  position: relative; z-index: 2;
+  box-shadow: var(--sh-md);
+  transition: all var(--t-base) var(--ease);
+}
+.mic-btn:hover {
+  transform: scale(1.07);
+  border-color: var(--teal);
+  box-shadow: var(--sh-teal), var(--sh-md);
+}
+.mic-btn:active { transform: scale(0.96); }
+
+.mic-btn.is-listening {
+  background: linear-gradient(145deg, var(--teal), #0f766e);
+  border-color: var(--teal-light);
+  box-shadow: var(--sh-teal), 0 0 0 8px var(--teal-dim);
+  animation: mic-pulse 2s ease-in-out infinite;
+}
+@keyframes mic-pulse {
+  0%,100% { box-shadow: var(--sh-teal), 0 0 0 8px var(--teal-dim); }
+  50%      { box-shadow: var(--sh-teal), 0 0 0 16px rgba(13,148,136,0.06); }
+}
+.mic-btn.is-listening .mic-icon { filter: brightness(0) invert(1); }
+
+/* Ripple rings on the mic button */
+.mic-ripple {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 1.5px solid var(--teal-light);
+  opacity: 0; pointer-events: none;
+}
+.mic-stage.pulsing .mic-ripple:nth-child(1) { animation: ripple 2.0s var(--ease) 0.0s infinite; }
+.mic-stage.pulsing .mic-ripple:nth-child(2) { animation: ripple 2.0s var(--ease) 0.55s infinite; }
+.mic-stage.pulsing .mic-ripple:nth-child(3) { animation: ripple 2.0s var(--ease) 1.1s infinite; }
+@keyframes ripple { 0%{transform:scale(1);opacity:0.65;} 100%{transform:scale(3);opacity:0;} }
+
+.mic-hint {
+  font-size: 11px; color: var(--text-3);
+  font-family: 'Fira Code', monospace;
+  letter-spacing: 0.04em;
+  text-align: center;
+  transition: color var(--t-base) var(--ease);
+  min-width: 80px;
+}
+.mic-hint.active { color: var(--teal); }
+
+/* Action buttons */
+.action-row {
+  display: flex; gap: 10px;
+}
+
+.action-btn {
+  flex: 1;
+  height: 42px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--surface-solid);
+  color: var(--text-2);
+  font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  box-shadow: var(--sh-sm);
+  transition: all var(--t-fast) var(--ease);
+}
+.action-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.action-btn:hover { transform: translateY(-2px); box-shadow: var(--sh-md); color: var(--text-1); border-color: var(--border-strong); }
+.action-btn:active { transform: translateY(0); }
+
+.action-btn.mute { background: var(--surface-solid); color: var(--text-2); }
+.action-btn.mute:hover { background: var(--teal-dim); color: var(--teal); border-color: rgba(13,148,136,0.25); }
+.action-btn.mute.is-muted { background: var(--teal-dim); color: var(--teal); border-color: rgba(13,148,136,0.3); }
+.action-btn.start  { background: linear-gradient(135deg, #0d9488, #0f766e); color: white; border: none; box-shadow: var(--sh-teal); }
+.action-btn.start:hover { box-shadow: 0 10px 36px rgba(13,148,136,0.45); }
+
+.action-btn.end { background: var(--red-dim); color: var(--red); border-color: rgba(239,68,68,0.2); }
+.action-btn.end:hover { background: rgba(239,68,68,0.18); }
+
+.action-btn.clear { background: var(--surface-solid); }
+.action-btn.clear:hover { background: var(--bg-deep, #f0f4f8); }
+
+/* Voice toggle row */
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 2px 2px 0;
+}
+.toggle-label {
+  font-size: 12px; color: var(--text-3);
+  display: flex; align-items: center; gap: 6px;
+  font-weight: 500;
+}
+.toggle-label svg { width: 14px; height: 14px; }
+
+/* Toggle switch */
+.tog {
+  position: relative; width: 42px; height: 22px; cursor: pointer;
+}
+.tog input { position: absolute; opacity: 0; width: 0; height: 0; }
+.tog-track {
+  position: absolute; inset: 0;
+  border-radius: 11px;
+  background: var(--border-strong);
+  border: 1px solid var(--border);
+  transition: background var(--t-base) var(--ease);
+}
+.tog-thumb {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: white;
+  transition: transform var(--t-base) var(--ease);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.tog input:checked ~ .tog-track { background: var(--teal); }
+.tog input:checked ~ .tog-thumb { transform: translateX(20px); }
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.footer-line {
+  text-align: center;
+  font-size: 11px; color: var(--text-3);
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+  padding: 2px 0 4px;
+}
+
+/* ============================================================
+   TOAST SYSTEM
+   ============================================================ */
+.toast-layer {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  z-index: 9999;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  background: var(--surface-solid);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-full);
+  box-shadow: var(--sh-lg);
+  backdrop-filter: blur(16px);
+  padding: 10px 20px;
+  font-size: 13px; font-weight: 500;
+  color: var(--text-1);
+  white-space: nowrap;
+  animation: toast-show 0.3s var(--ease) both, toast-hide 0.3s var(--ease) 2.6s both;
+  pointer-events: none;
+}
+@keyframes toast-show { from{opacity:0;transform:translateY(8px) scale(0.95);} to{opacity:1;transform:translateY(0) scale(1);} }
+@keyframes toast-hide { to  {opacity:0;transform:translateY(-4px) scale(0.96);} }
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+@keyframes fade-up {
+  from { opacity:0; transform: translateY(10px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 640px) {
+  .voice-panel {
+    grid-template-columns: auto 1fr;
+    padding: 22px 20px 18px;
+    gap: 16px;
+  }
+  .vp-wave { display: none; }
+  .orb-stage { width: 72px; height: 72px; }
+  .orb { width: 56px; height: 56px; }
+  .vp-title { font-size: 20px; }
+  .chat { padding: 18px 16px 8px; min-height: 260px; max-height: 350px; }
+  .control-panel { padding: 16px 16px 20px; }
+  .mic-btn { width: 60px; height: 60px; }
+  .action-btn span { display: none; }
+  .action-btn { flex: unset; width: 48px; height: 42px; padding: 0; }
+  .action-btn.start { flex: 1; width: auto; }
+  .action-btn.start span { display: inline; }
+}
+</style>
+</head>
+
+<body>
+<!-- ────────────────────────────────────────────
+     APP SHELL
+──────────────────────────────────────────── -->
+<div class="app">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8"  y1="23" x2="16" y2="23"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-name">ALVA</span>
+        <span class="logo-tag">Voice Appointment AI</span>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <button class="tb-btn" onclick="toggleTheme()" id="themeBtn" title="Toggle dark mode">
+        <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <span id="themeLabel">Dark mode</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CARD -->
+  <main class="card">
+
+    <!-- VOICE PANEL -->
+    <section class="voice-panel">
+
+      <!-- Orb -->
+      <div class="orb-stage" id="orbStage" onclick="toggleConversation()" title="Click to start / stop">
+        <div class="halo halo-1"></div>
+        <div class="halo halo-2"></div>
+        <div class="halo halo-3"></div>
+        <div class="orb">
+          <div class="orb-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8"  y1="23" x2="16" y2="23"/>
+            </svg>
+          </div>
+          <div class="orb-waves">
+            <div class="ow"></div><div class="ow"></div><div class="ow"></div>
+            <div class="ow"></div><div class="ow"></div>
+          </div>
+          <div class="orb-spinner"></div>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="vp-info">
+        <h1 class="vp-title">ALVA <em>Voice</em> Assistant</h1>
+        <p class="vp-sub">AI-powered appointment scheduling — speak naturally</p>
+        <div class="status-chip" id="statusChip">
+          <div class="chip-dot"></div>
+          <span id="statusText">Ready</span>
+        </div>
+      </div>
+
+      <!-- Waveform -->
+      <div class="vp-wave" id="vpWave">
+        <div class="vw-bar"></div><div class="vw-bar"></div>
+        <div class="vw-bar"></div><div class="vw-bar"></div>
+        <div class="vw-bar"></div><div class="vw-bar"></div>
+        <div class="vw-bar"></div><div class="vw-bar"></div>
+        <div class="vw-bar"></div>
+      </div>
+
+    </section>
+
+    <!-- CHAT -->
+    <div class="chat" id="chat">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">🎤</div>
+        <h3>Start a conversation</h3>
+        <p>Tap the microphone or press <strong>Start</strong> to speak with ALVA about your appointment.</p>
+
+        <!-- Email pre-registration: lets ALVA deliver voice messages even before
+             the patient speaks. Queued messages flush automatically on submit. -->
+        <div id="emailRegBox" style="margin-top:18px;display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <p style="font-size:13px;color:var(--text-secondary,#6b7280);margin:0;">
+            Enter your email to receive voice notifications from your doctor:
+          </p>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;">
+            <input
+              id="preRegEmail"
+              type="email"
+              placeholder="your@email.com"
+              style="height:36px;padding:0 12px;border:1.5px solid #d1d5db;border-radius:8px;
+                     font-size:13px;outline:none;width:210px;font-family:inherit;"
+              onkeydown="if(event.key==='Enter') preRegisterEmail()"
+            />
+            <button
+              onclick="preRegisterEmail()"
+              style="height:36px;padding:0 16px;background:var(--primary,#0891b2);color:#fff;
+                     border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+              ✓ Notify me
+            </button>
+          </div>
+          <p id="preRegStatus" style="font-size:12px;color:#059669;margin:0;display:none;">
+            ✅ Registered — ALVA will deliver your voice messages.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROL PANEL -->
+    <div class="control-panel">
+
+      <!-- Mic button -->
+      <div class="mic-row">
+        <div class="mic-hint" id="hintLeft">tap to speak</div>
+
+        <div class="mic-stage" id="micStage">
+          <div class="mic-ripple"></div>
+          <div class="mic-ripple"></div>
+          <div class="mic-ripple"></div>
+          <button class="mic-btn" id="micBtn" onclick="toggleConversation()" title="Start / Stop listening">
+            <span class="mic-icon">🎤</span>
+          </button>
+        </div>
+
+        <div class="mic-hint" id="hintRight">&nbsp;</div>
+      </div>
+
+      <!-- Action buttons — each does something the mic button does NOT -->
+      <div class="action-row">
+        <button class="action-btn mute" id="muteBtn" onclick="toggleMute()" title="Mute / unmute microphone">
+          <svg id="muteIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <span id="muteLabel">Mute</span>
+        </button>
+        <button class="action-btn end" onclick="endConversation()" title="End session and close connection">
+          <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          <span>End Session</span>
+        </button>
+        <button class="action-btn clear" onclick="clearChat()" title="Clear chat history">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          <span>Clear Chat</span>
+        </button>
+      </div>
+
+      <!-- Voice toggle -->
+      <div class="toggle-row">
+        <span class="toggle-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          Voice output
+        </span>
+        <label class="tog">
+          <input type="checkbox" id="voiceToggle" checked />
+          <div class="tog-track"></div>
+          <div class="tog-thumb"></div>
+        </label>
+      </div>
+
+    </div>
+  </main>
+
+  <div class="footer-line">ALVA · Powered by AI · Requires Google Chrome for voice features</div>
+</div>
+
+<!-- Toast layer -->
+<div class="toast-layer" id="toastLayer"></div>
+
+
+<!-- ────────────────────────────────────────────
+     JAVASCRIPT
+──────────────────────────────────────────── -->
+<script>
+'use strict';
+
+/* ═══════════════════════════════════
+   STATE
+═══════════════════════════════════ */
+let sessionId            = 'user127';
+let socket               = null;
+let recognition          = null;
+let isSpeaking           = false;
+let conversationActive   = false;
+let conversationEnded    = false;
+let voiceEnabled         = true;
+let isDark               = false;
+
+let isMuted              = false;
+
+// Silence / no-input timeout — end call after 45s of inactivity
+let silenceTimer         = null;
+const SILENCE_TIMEOUT_MS = 30000;
+
+// Partial utterance tracking
+let lastInterimText      = '';
+let partialTimer         = null;
+const PARTIAL_TIMEOUT_MS = 5000;
+
+// ASR latency measurement
+let asrSendTimestamp     = null;
+
+// Escalation timeout — auto-end call if no agent joins within 45s
+let escalationTimer      = null;
+const ESCALATION_TIMEOUT_MS = 30000;
+
+/* ═══════════════════════════════════
+   MUTE TOGGLE
+═══════════════════════════════════ */
+function toggleMute() {
+  isMuted = !isMuted;
+  const btn   = document.getElementById('muteBtn');
+  const label = document.getElementById('muteLabel');
+  const icon  = document.getElementById('muteIcon');
+
+  btn.classList.toggle('is-muted', isMuted);
+  label.textContent = isMuted ? 'Unmute' : 'Mute';
+
+  // Swap icon: slashed mic when muted
+  icon.innerHTML = isMuted
+    ? `<line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>`
+    : `<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>`;
+
+  // Pause/resume listening without ending the session
+  if (isMuted && recognition) {
+    try { recognition.stop(); } catch (_) {}
+    setStatus('Muted', 'ended');
+    toast('🔇 Microphone muted');
+  } else if (!isMuted && conversationActive && !conversationEnded) {
+    setStatus('Listening…', 'listening');
+    setTimeout(safeStartListening, 300);
+    toast('🎤 Microphone unmuted');
+  }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  buildSocket();
+  document.getElementById('voiceToggle').addEventListener('change', e => {
+    voiceEnabled = e.target.checked;
+    toast(voiceEnabled ? '🔊 Voice output on' : '🔇 Voice output off');
+  });
+  // Pre-load voices
+  if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+});
+
+/* ═══════════════════════════════════
+   THEME
+═══════════════════════════════════ */
+function toggleTheme() {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  document.getElementById('themeLabel').textContent = isDark ? 'Light' : 'Dark';
+  const icon = document.getElementById('themeIcon');
+  icon.innerHTML = isDark
+    ? '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>'
+    : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+}
+
+/* ═══════════════════════════════════
+   TOASTS
+═══════════════════════════════════ */
+function toast(msg) {
+  const layer = document.getElementById('toastLayer');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  layer.appendChild(el);
+  setTimeout(() => el.remove(), 3100);
+}
+
+/* ═══════════════════════════════════
+   STATUS SYSTEM
+═══════════════════════════════════ */
+function setStatus(label, mode) {
+  // Chip
+  const chip = document.getElementById('statusChip');
+  const txt  = document.getElementById('statusText');
+  txt.textContent = label;
+  chip.className  = 'status-chip' + (mode ? ' s-' + mode : '');
+
+  // Orb
+  const orb = document.getElementById('orbStage');
+  orb.className = 'orb-stage' + (mode ? ' mode-' + mode : '');
+
+  // Wave
+  const wave = document.getElementById('vpWave');
+  wave.className = 'vp-wave' + (mode === 'listening' ? ' w-listening' : mode === 'speaking' ? ' w-speaking' : '');
+
+  // Mic button
+  const micBtn   = document.getElementById('micBtn');
+  const micStage = document.getElementById('micStage');
+  const hintLeft = document.getElementById('hintLeft');
+
+  micBtn.classList.toggle('is-listening', mode === 'listening');
+  micStage.classList.toggle('pulsing', mode === 'listening');
+  micBtn.style.pointerEvents = (mode === 'speaking' || mode === 'processing') ? 'none' : '';
+
+  const hints = {
+    listening:  'listening…',
+    processing: 'processing…',
+    speaking:   'speaking…',
+    ended:      'session ended',
+  };
+  hintLeft.textContent = hints[mode] || 'tap to speak';
+  hintLeft.classList.toggle('active', mode === 'listening');
+}
+
+/* ═══════════════════════════════════
+   MESSAGES
+═══════════════════════════════════ */
+function removeEmpty() {
+  const el = document.getElementById('emptyState');
+  if (el) el.remove();
+}
+function removeTyping() {
+  const el = document.getElementById('typingRow');
+  if (el) el.remove();
+}
+function scrollChat() {
+  const chat = document.getElementById('chat');
+  chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
+}
+
+function addMessage(role, text) {
+  removeEmpty();
+  removeTyping();
+
+  const chat = document.getElementById('chat');
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const isUser = role === 'user';
+
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + (isUser ? 'from-user' : 'from-ai');
+
+  const av = document.createElement('div');
+  av.className = 'av';
+  av.textContent = isUser ? '👤' : '🤖';
+
+  const group = document.createElement('div');
+  group.className = 'msg-group';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = text;
+
+  const meta = document.createElement('div');
+  meta.className = 'msg-meta';
+  meta.textContent = time;
+
+  group.appendChild(bubble);
+  group.appendChild(meta);
+  row.appendChild(av);
+  row.appendChild(group);
+  chat.appendChild(row);
+  scrollChat();
+  resetSilenceTimer();
+}
+
+function showTyping() {
+  removeTyping();
+  const chat = document.getElementById('chat');
+
+  const row = document.createElement('div');
+  row.className = 'typing-row';
+  row.id = 'typingRow';
+
+  const av = document.createElement('div');
+  av.className = 'av';
+  av.textContent = '🤖';
+
+  const bub = document.createElement('div');
+  bub.className = 'typing-bubble';
+  bub.innerHTML = '<div class="td"></div><div class="td"></div><div class="td"></div>';
+
+  row.appendChild(av);
+  row.appendChild(bub);
+  chat.appendChild(row);
+  scrollChat();
+}
+
+function clearChat() {
+  const chat = document.getElementById('chat');
+  chat.innerHTML = `
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🎤</div>
+      <h3>Start a conversation</h3>
+      <p>Tap the microphone or press <strong>Start</strong> to speak with ALVA about your appointment.</p>
+    </div>`;
+  toast('🗑 Chat cleared');
+}
+
+/* ═══════════════════════════════════
+   WEBSOCKET
+═══════════════════════════════════ */
+function buildSocket() {
+  if (socket && socket.readyState === WebSocket.OPEN) return;
+  socket = new WebSocket(`ws://localhost:9001/ws/${sessionId}`);
+  socket.onopen = () => {
+    console.log('[ALVA] WebSocket connected');
+    // Re-register email on every (re)connect so backend can flush queued messages
+    const storedEmail = localStorage.getItem('alva_patient_email');
+    if (storedEmail) {
+      socket.send('__feedback_email__:' + storedEmail);
+    }
+  };
+  socket.onmessage = handleServerMessage;
+  socket.onclose   = () => { if (!conversationEnded) toast('⚠ Connection lost'); };
+  socket.onerror   = () => toast('⚠ WebSocket error');
+}
+
+function handleServerMessage(event) {
+  const data = JSON.parse(event.data);
+
+  // ── HUMAN HANDOFF MESSAGE (doctor speaking to patient) ───────
+  if (data.type === 'handoff_message') {
+    if (data.sender === 'agent' || data.sender === 'doctor') {
+      clearEscalationTimer();
+      addHandoffMessage('doctor', data.text);
+      speakHandoffText(data.text);
+    } else if (data.sender === 'system') {
+      addHandoffMessage('system', data.text);
+      if (data.text.includes('joined')) {
+        clearEscalationTimer();
+      }
+      if (data.text.includes('ended') || data.text.includes('disconnected')) {
+        clearEscalationTimer();
+        hideHandoffBanner();
+        setTimeout(() => setStatus('Listening…', 'listening'), 1000);
+      }
+    }
+    return;
+  }
+
+  // ── HUMAN HANDOFF INITIATED (mode=human_handoff) ─────────────
+  if (data.type === 'assistant_reply' && data.mode === 'human_handoff') {
+    addMessage('assistant', data.text);
+    speakText(data.text);
+    if (data.escalated && data.room_id) {
+      showHandoffBanner(data.room_id);
+      if (recognition) { try { recognition.stop(); } catch(_) {} }
+      setStatus('Connected to Doctor 🩺', 'speaking');
+      startEscalationTimer();
+    }
+    if (data.no_agent) {
+      // No agent available — stay in normal flow
+      setTimeout(() => setStatus('Listening…', 'listening'), 3000);
+    }
+    return;
+  }
+
+  if (data.type === 'assistant_reply') {
+    if (asrSendTimestamp) {
+      const latencyMs = performance.now() - asrSendTimestamp;
+      asrSendTimestamp = null;
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(`__asr_latency__:${latencyMs.toFixed(1)}:`);
+      }
+    }
+
+    addMessage('assistant', data.text);
+    speakText(data.text);
+
+    // When no-show rebook flow starts, ensure mic stays active
+    if (data.mode === 'booking') {
+      setStatus('Listening…', 'listening');
+    }
+
+    // When no-show convo ends (patient said no, goodbye)
+    if (data.mode === 'noshow_end') {
+      setTimeout(() => setStatus('Tap to speak', ''), 4000);
+    }
+
+    // ── Reschedule completed successfully ────────────────────
+    if (data.mode === 'reschedule_done') {
+      conversationEnded = true;
+      if (recognition) { try { recognition.stop(); } catch (_) {} }
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(data.text);
+      const voices = window.speechSynthesis.getVoices();
+      const enVoice = voices.find(v => v.lang.startsWith('en'));
+      if (enVoice) utt.voice = enVoice;
+      utt.lang = 'en-US'; utt.rate = 1; utt.pitch = 1; utt.volume = 1;
+      utt.onend = () => {
+        isSpeaking = false;
+        conversationEnded = false;
+        setStatus('Tap to speak', '');
+      };
+      isSpeaking = true;
+      setStatus('Speaking…', 'speaking');
+      window.speechSynthesis.speak(utt);
+      return;
+    }
+  }
+
+  if (data.type === 'voice_notification') {
+    addMessage('assistant', data.text);
+    speakText(data.text);
+
+    // ── Existing: feedback mode ──────────────────────────────
+    if (data.mode === 'feedback') {
+      if (data.email) socket.send('__feedback_email__:' + data.email);
+      setTimeout(() => socket.send('__feedback_mode__'), 100);
+    }
+
+    // ── Reminder mode: speak only, do NOT activate feedback mode ──
+    if (data.mode === 'reminder') {
+      // Just speak the reminder message — mic auto-restarts after TTS
+      // so patient can say "reschedule" or "cancel" naturally
+    }
+
+    // ── No-show mode: speak the message then activate noshow flow ──
+    if (data.mode === 'noshow') {
+      if (data.email) {
+        // Small delay so backend signal is sent after TTS starts
+        setTimeout(() => {
+          socket.send('__noshow_mode__:' + data.email);
+        }, 200);
+      }
+      // Mic auto-restarts after ALVA finishes speaking via utterance.onend
+    }
+
+    // ── Post-appointment mode (TC082, TC083, TC084) ──────────────
+    // Triggered when doctor marks appointment COMPLETED and ALVA calls patient
+    if (data.mode === 'post_appointment') {
+      const paEmail = data.email || '';
+      const paId    = data.appointment_id || '';
+      if (paEmail || paId) {
+        // Register email so backend can route to this websocket
+        if (paEmail) socket.send('__feedback_email__:' + paEmail);
+        // Activate post-appointment conversation mode with email:id
+        setTimeout(() => {
+          socket.send(`__post_appointment_mode__:${paEmail}:${paId}`);
+        }, 200);
+      }
+      // Mic will auto-restart after TTS via utterance.onend so patient can respond
+    }
+
+    // ── Post-appointment ended (patient declined rebook) ────────
+    if (data.mode === 'post_appointment_end') {
+      setTimeout(() => setStatus('Tap to speak', ''), 4000);
+    }
+  }
+}
+
+/* ═══════════════════════════════════
+   REGISTER EMAIL → BACKEND
+   Called as soon as the patient's email is known so the
+   doctor dashboard can target this specific WebSocket session.
+═══════════════════════════════════ */
+function registerEmail(email) {
+  if (email && socket && socket.readyState === WebSocket.OPEN) {
+    socket.send('__feedback_email__:' + email);
+  }
+  // Always persist email so it's re-registered on every reconnect
+  if (email) localStorage.setItem('alva_patient_email', email.trim().toLowerCase());
+}
+
+/* ═══════════════════════════════════
+   PRE-REGISTER EMAIL
+   Patient enters email before speaking so doctor-triggered voice
+   messages are delivered immediately. Queued backend messages flush
+   automatically as soon as this sends __feedback_email__.
+═══════════════════════════════════ */
+function preRegisterEmail() {
+  const input = document.getElementById('preRegEmail');
+  const email = (input?.value || '').trim().toLowerCase();
+  if (!email || !email.includes('@')) {
+    input.style.borderColor = '#ef4444';
+    input.focus();
+    return;
+  }
+  input.style.borderColor = '#059669';
+  localStorage.setItem('alva_patient_email', email);
+
+  const doSend = () => socket.send('__feedback_email__:' + email);
+
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    doSend();
+  } else {
+    buildSocket();
+    const origOpen = socket.onopen;
+    socket.onopen = () => { if (origOpen) origOpen(); doSend(); };
+  }
+
+  // UI feedback
+  const status = document.getElementById('preRegStatus');
+  if (status) status.style.display = 'block';
+  if (input) input.disabled = true;
+  const btn = document.querySelector('#emailRegBox button');
+  if (btn) btn.disabled = true;
+}
+
+function sendToServer(text) {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(text);
+
+    // Auto-register email as soon as patient mentions it,
+    // so doctor dashboard can target this session for no-show voice calls
+    const emailMatch = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
+    if (emailMatch) {
+      registerEmail(emailMatch[0]);
+    }
+
+  } else {
+    buildSocket();
+    socket.onopen = () => { socket.send(text); socket.onopen = null; };
+  }
+}
+
+/* ═══════════════════════════════════
+   ASR CONFIDENCE PIP
+═══════════════════════════════════ */
+function showConfidencePip(score) {
+  const chat  = document.getElementById('chat');
+  const metas = chat.querySelectorAll('.msg-row.from-user .msg-meta');
+  if (!metas.length) return;
+  const meta = metas[metas.length - 1];
+  const prev = meta.querySelector('.asr-pip');
+  if (prev) prev.remove();
+  const color = score >= 0.75 ? '#059669' : score >= 0.5 ? '#d97706' : '#e11d48';
+  const label = score >= 0.75 ? 'clear' : score >= 0.5 ? 'fair' : 'low';
+  const pip   = document.createElement('span');
+  pip.className = 'asr-pip';
+  pip.title     = `ASR confidence: ${(score * 100).toFixed(0)}% (${label})`;
+  pip.style.cssText =
+    `display:inline-flex;align-items:center;gap:3px;margin-left:6px;` +
+    `font-size:9px;font-weight:700;color:${color};opacity:0.8;` +
+    `background:${color}1a;padding:1px 5px;border-radius:999px;border:1px solid ${color}30;`;
+  pip.textContent = `\u25cf ${(score * 100).toFixed(0)}%`;
+  meta.appendChild(pip);
+}
+
+/* ═══════════════════════════════════
+   SPEECH SYNTHESIS
+═══════════════════════════════════ */
+function speakText(text) {
+  if (!text) return;
+  if (!voiceEnabled) { afterAssistantSpeaks(); return; }
+
+  window.speechSynthesis.cancel();
+
+  const utt    = new SpeechSynthesisUtterance(text);
+  const voices = window.speechSynthesis.getVoices();
+  const enVoice = voices.find(v => v.lang.startsWith('en'));
+  if (enVoice) utt.voice = enVoice;
+  utt.lang = 'en-US'; utt.rate = 1; utt.pitch = 1; utt.volume = 1;
+
+  isSpeaking = true;
+  setStatus('Speaking…', 'speaking');
+  if (recognition) { try { recognition.stop(); } catch (_) {} }
+
+  utt.onend  = () => { isSpeaking = false; afterAssistantSpeaks(); };
+  utt.onerror= () => { isSpeaking = false; afterAssistantSpeaks(); };
+  window.speechSynthesis.speak(utt);
+}
+
+function afterAssistantSpeaks() {
+  if (!conversationEnded) {
+    setStatus('Listening…', 'listening');
+    setTimeout(() => {
+      safeStartListening();
+      resetSilenceTimer();
+    }, 500);
+  }
+}
+
+/* ═══════════════════════════════════
+   SPEECH RECOGNITION
+═══════════════════════════════════ */
+function toggleConversation() {
+  if (!conversationActive || conversationEnded) startConversation();
+  else endConversation();
+}
+
+function startConversation() {
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    toast('❌ Please use Google Chrome for voice features');
+    return;
+  }
+
+  conversationActive = true;
+  conversationEnded  = false;
+  buildSocket();
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang            = 'en-IN';
+  recognition.interimResults  = false;
+  recognition.continuous      = true;
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => {
+    setStatus('Listening…', 'listening');
+    resetSilenceTimer();
+  };
+
+  recognition.onresult = (event) => {
+    if (isSpeaking) return;
+    const result   = event.results[event.results.length - 1];
+    const isFinal  = result.isFinal;
+
+    if (!isFinal) {
+      lastInterimText = result[0].transcript.trim();
+      resetSilenceTimer();
+      resetPartialTimer();
+      return;
+    }
+
+    // ── Final result ──
+    const transcript = result[0].transcript.trim();
+    if (!transcript) return;
+
+    clearSilenceTimer();
+    clearPartialTimer();
+    lastInterimText = '';
+
+    addMessage('user', transcript);
+    setStatus('Processing…', 'processing');
+    showTyping();
+    try { recognition.stop(); } catch (_) {}
+
+    asrSendTimestamp = performance.now();
+
+    // ASR confidence
+    const confidence = typeof result[0].confidence === 'number' ? result[0].confidence : null;
+    if (confidence !== null) {
+      sendToServer(`__asr_confidence__:${confidence.toFixed(4)}:${transcript}`);
+      showConfidencePip(confidence);
+    } else {
+      sendToServer(transcript);
+    }
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error === 'aborted' || e.error === 'no-speech') {
+      return;
+    }
+    console.warn('[ALVA] Speech error:', e.error);
+  };
+
+  recognition.onend = () => {
+    if (!isSpeaking && !conversationEnded) {
+      setTimeout(safeStartListening, 500);
+    }
+  };
+
+  safeStartListening();
+  toast('🎤 Conversation started');
+  playChime([880, 1100], [0, 150]);
+}
+
+function safeStartListening() {
+  if (!recognition || isSpeaking || conversationEnded || isMuted) return;
+  try { recognition.start(); } catch (_) {}
+}
+
+/* ═══════════════════════════════════
+   SILENCE TIMEOUT
+═══════════════════════════════════ */
+function resetSilenceTimer() {
+  clearSilenceTimer();
+  if (!conversationActive || conversationEnded || isMuted || isSpeaking) return;
+  silenceTimer = setTimeout(() => {
+    if (conversationActive && !conversationEnded && !isSpeaking && !isMuted) {
+      const msg = 'It seems like you are not available right now. '
+                + 'We will end this session. Feel free to call back anytime. Goodbye!';
+      addMessage('assistant', msg);
+      speakText(msg);
+      const waitForSpeech = setInterval(() => {
+        if (!isSpeaking) {
+          clearInterval(waitForSpeech);
+          endConversation();
+        }
+      }, 500);
+    }
+  }, SILENCE_TIMEOUT_MS);
+}
+function clearSilenceTimer() {
+  if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+}
+
+/* ═══════════════════════════════════
+   PARTIAL UTTERANCE TIMEOUT
+═══════════════════════════════════ */
+function resetPartialTimer() {
+  clearPartialTimer();
+  partialTimer = setTimeout(() => {
+    if (lastInterimText && conversationActive && !conversationEnded && !isSpeaking) {
+      sendToServer('__partial_utterance__:' + lastInterimText);
+      lastInterimText = '';
+    }
+  }, PARTIAL_TIMEOUT_MS);
+}
+function clearPartialTimer() {
+  if (partialTimer) { clearTimeout(partialTimer); partialTimer = null; }
+}
+
+/* ═══════════════════════════════════
+   ESCALATION TIMEOUT (45s)
+   Auto-end call if no agent joins
+═══════════════════════════════════ */
+function startEscalationTimer() {
+  clearEscalationTimer();
+  escalationTimer = setTimeout(() => {
+    const msg = 'We apologize — no agent is available at the moment. '
+              + 'Please call back shortly. Thank you for your patience. Goodbye!';
+    addMessage('assistant', msg);
+    speakText(msg);
+
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send('__end_handoff__');
+    }
+    hideHandoffBanner();
+
+    const waitForSpeech = setInterval(() => {
+      if (!isSpeaking) {
+        clearInterval(waitForSpeech);
+        endConversation();
+      }
+    }, 500);
+  }, ESCALATION_TIMEOUT_MS);
+}
+
+function clearEscalationTimer() {
+  if (escalationTimer) { clearTimeout(escalationTimer); escalationTimer = null; }
+}
+
+function endConversation() {
+  conversationActive = false;
+  conversationEnded  = true;
+  clearSilenceTimer();
+  clearPartialTimer();
+  clearEscalationTimer();
+  lastInterimText = '';
+  window.speechSynthesis.cancel();
+  if (recognition) { try { recognition.stop(); } catch (_) {} recognition = null; }
+  if (socket && socket.readyState === WebSocket.OPEN) socket.close();
+  removeTyping();
+  setStatus('Conversation Ended', 'ended');
+  toast('Session ended');
+  playChime([440], [0]);
+}
+
+/* ═══════════════════════════════════
+   AUDIO FEEDBACK (Web Audio API)
+═══════════════════════════════════ */
+function playChime(freqs, delays) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    freqs.forEach((freq, i) => {
+      setTimeout(() => {
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.07, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.18);
+        if (i === freqs.length - 1) setTimeout(() => ctx.close(), 500);
+      }, delays[i] || 0);
+    });
+  } catch (_) {}
+}
+
+/* ═══════════════════════════════════
+   HANDOFF BANNER helpers
+═══════════════════════════════════ */
+let handoffActive = false;
+
+function showHandoffBanner(roomId) {
+  handoffActive = true;
+  let banner = document.getElementById('handoff-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'handoff-banner';
+    banner.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;flex:1;">
+        <span style="font-size:20px;animation:handoff-pulse 1s infinite alternate;">🩺</span>
+        <div>
+          <div style="font-weight:700;font-size:13px;">Connected to Doctor</div>
+          <div style="font-size:11px;opacity:0.75;">Speak now — your voice goes directly to the doctor</div>
+        </div>
+      </div>
+      <button onclick="endPatientHandoff()" style="
+        background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);
+        color:#fff;border-radius:8px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;">
+        End
+      </button>`;
+    banner.style.cssText = `
+      position:fixed;top:16px;left:50%;transform:translateX(-50%);
+      background:linear-gradient(135deg,#0d9488,#0f766e);
+      color:#fff;border-radius:14px;padding:12px 16px;
+      display:flex;align-items:center;gap:12px;min-width:320px;max-width:480px;
+      box-shadow:0 8px 32px rgba(13,148,136,0.4);z-index:9999;
+      animation:banner-drop 0.4s cubic-bezier(0.16,1,0.3,1) both;`;
+    document.body.appendChild(banner);
+  }
+  banner.style.display = 'flex';
+
+  // Inject keyframes if not already present
+  if (!document.getElementById('handoff-styles')) {
+    const s = document.createElement('style');
+    s.id = 'handoff-styles';
+    s.textContent = `
+      @keyframes banner-drop{from{opacity:0;transform:translateX(-50%) translateY(-20px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+      @keyframes handoff-pulse{from{transform:scale(1);}to{transform:scale(1.2);}}
+      .msg-handoff-doctor{background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;align-self:flex-end;border-bottom-right-radius:4px;padding:10px 14px;border-radius:14px;max-width:75%;font-size:14px;line-height:1.5;box-shadow:0 4px 12px rgba(13,148,136,0.3);}
+      .msg-handoff-system{background:rgba(245,158,11,0.12);color:#92400e;align-self:center;padding:5px 14px;border-radius:999px;font-size:11px;font-weight:600;border:1px solid rgba(245,158,11,0.25);}
+      .msg-handoff-label{font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-3);margin-bottom:3px;}
+      .msg-handoff-label.right{text-align:right;}`;
+    document.head.appendChild(s);
+  }
+}
+
+function hideHandoffBanner() {
+  handoffActive = false;
+  const banner = document.getElementById('handoff-banner');
+  if (banner) banner.style.display = 'none';
+}
+
+function endPatientHandoff() {
+  clearEscalationTimer();
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send('__end_handoff__');
+  }
+  hideHandoffBanner();
+  setStatus('Listening…', 'listening');
+  setTimeout(safeStartListening, 600);
+}
+
+/* ═══════════════════════════════════
+   HANDOFF CHAT BUBBLES
+   Doctor messages render in teal (right-aligned)
+   System messages render centered amber pill
+═══════════════════════════════════ */
+function addHandoffMessage(sender, text) {
+  const chat = document.getElementById('chat');
+  if (!chat) return;
+
+  // Remove empty state if present
+  const empty = chat.querySelector('.empty-state');
+  if (empty) empty.remove();
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:3px;';
+
+  if (sender === 'system') {
+    wrap.style.alignItems = 'center';
+    const pill = document.createElement('div');
+    pill.className = 'msg-handoff-system';
+    pill.textContent = text;
+    wrap.appendChild(pill);
+  } else {
+    // Doctor message — right side teal bubble
+    wrap.style.alignItems = 'flex-end';
+    const label = document.createElement('div');
+    label.className = 'msg-handoff-label right';
+    label.textContent = '🩺 Doctor';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-handoff-doctor';
+    bubble.textContent = text;
+    wrap.appendChild(label);
+    wrap.appendChild(bubble);
+  }
+
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+/* ═══════════════════════════════════
+   HANDOFF TTS — speak doctor words
+   Uses a distinct voice/rate so patient
+   can distinguish doctor from ALVA
+═══════════════════════════════════ */
+function speakHandoffText(text) {
+  if (!text || !voiceEnabled) return;
+  window.speechSynthesis.cancel();
+
+  const utt = new SpeechSynthesisUtterance(text);
+  const voices = window.speechSynthesis.getVoices();
+  // Prefer a male voice for doctor if available, fallback to any English
+  const maleVoice = voices.find(v => v.lang.startsWith('en') && /male|david|google uk english male/i.test(v.name));
+  const anyEn = voices.find(v => v.lang.startsWith('en'));
+  utt.voice = maleVoice || anyEn || null;
+  utt.lang = 'en-IN';
+  utt.rate = 0.95;
+  utt.pitch = 0.9;   // slightly lower pitch to sound different from ALVA
+  utt.volume = 1;
+
+  isSpeaking = true;
+  setStatus('Doctor speaking…', 'speaking');
+
+  utt.onend = () => {
+    isSpeaking = false;
+    if (handoffActive) {
+      setStatus('Connected to Doctor 🩺', 'listening');
+      setTimeout(safeStartListening, 400);
+    } else {
+      afterAssistantSpeaks();
+    }
+  };
+  utt.onerror = () => { isSpeaking = false; };
+  window.speechSynthesis.speak(utt);
+}
+</script>
+</body>
+</html>
